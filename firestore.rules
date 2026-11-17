@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// The public site never talks to Firestore directly. Visitors submit forms to
+// the Next.js API routes, which write with the Admin SDK and bypass these rules.
+// The admin dashboard uses the browser SDK and is limited to users that carry
+// the "admin" custom claim (set with scripts/create-admin.mjs).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

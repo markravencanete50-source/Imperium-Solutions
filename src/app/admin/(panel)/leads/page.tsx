@@ -1,0 +1,292 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  COLLECTIONS,
+  LEAD_STATUSES,
+  TEMPERATURES,
+  dateTime,
+  label,
+  shortDate,
+  type Activity,
+  type Lead,
+} from "@/lib/crm";
+import { createRecord, removeRecord, updateRecord, useCollection } from "@/components/admin/data";
+import { useAuth } from "@/components/admin/auth";
+import { AField, ConfirmButton, Drawer, Empty, PageTitle, Pill } from "@/components/admin/ui";
+
+function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const notes = useCollection<Activity>(`${COLLECTIONS.leads}/${lead.id}/activities`);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function addNote(e: FormEvent) {
+    e.preventDefault();
+    if (!note.trim()) return;
+    await createRecord(`${COLLECTIONS.leads}/${lead.id}/activities`, { text: note.trim(), by: user?.email || "" });
+    setNote("");
+  }
+
+  async function convert() {
+    setBusy(true);
+    const ref = await createRecord(COLLECTIONS.clients, {
+      name: lead.company || lead.name,
+      contactName: lead.name,
+      email: lead.email,
+      industry: "",
+      services: [lead.side, lead.coverage].filter(Boolean).join(", "),
+      status: "onboarding",
+      monthlyValue: 0,
+      startDate: lead.startDate || "",
+      notes: lead.need || "",
+      leadId: lead.id,
+    });
+    await updateRecord(COLLECTIONS.leads, lead.id, { status: "won", clientId: ref.id });
+    router.push("/admin/clients");
+  }
+
+  async function createDeal() {
+    setBusy(true);
+    await createRecord(COLLECTIONS.deals, {
+      title: `${lead.company || lead.name} support team`,
+      company: lead.company || lead.name,
+      leadId: lead.id,
+      stage: "discovery",
+      value: 0,
+      billing: "monthly",
+      expectedClose: "",
+    });
+    if (lead.status === "new" || lead.status === "contacted") {
+      await updateRecord(COLLECTIONS.leads, lead.id, { status: "qualified" });
+    }
+    router.push("/admin/pipeline");
+  }
+
+  const details: [string, string | undefined][] = [
+    ["Email", lead.email],
+    ["Company", lead.company],
+    ["Type", label(lead.type)],
+    ["Source", lead.source],
+    ["Support needed", lead.side],
+    ["Coverage", lead.coverage],
+    ["Team size", lead.teamSize],
+    ["Target start", lead.startDate ? shortDate(lead.startDate) : ""],
+    ["Received", dateTime(lead.createdAt)],
+  ];
+
+  return (
+    <Drawer title={lead.name} onClose={onClose}>
+      <div className="form-row">
+        <AField label="Status">
+          <select
+            value={lead.status}
+            onChange={(e) => updateRecord(COLLECTIONS.leads, lead.id, { status: e.target.value })}
+          >
+            {LEAD_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {label(s)}
+              </option>
+            ))}
+          </select>
+        </AField>
+        <AField label="Rating">
+          <select
+            value={lead.temperature}
+            onChange={(e) => updateRecord(COLLECTIONS.leads, lead.id, { temperature: e.target.value })}
+          >
+            {TEMPERATURES.map((t) => (
+              <option key={t} value={t}>
+                {label(t)}
+              </option>
+            ))}
+          </select>
+        </AField>
+      </div>
+
+      <dl className="details">
+        {details
+          .filter(([, v]) => v)
+          .map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{k === "Email" ? <a href={`mailto:${v}`}>{v}</a> : v}</dd>
+            </div>
+          ))}
+      </dl>
+
+      {lead.need ? (
+        <>
+          <h3>What they need</h3>
+          <p className="prewrap">{lead.need}</p>
+        </>
+      ) : null}
+
+      <div className="drawer-actions">
+        <button className="abtn abtn--primary" type="button" disabled={busy} onClick={createDeal}>
+          Create deal
+        </button>
+        {lead.clientId ? null : (
+          <button className="abtn" type="button" disabled={busy} onClick={convert}>
+            Convert to client
+          </button>
+        )}
+        <ConfirmButton
+          label="Delete lead"
+          onConfirm={async () => {
+            await removeRecord(COLLECTIONS.leads, lead.id);
+            onClose();
+          }}
+        />
+      </div>
+
+      <h3>Notes</h3>
+      <form className="note-form" onSubmit={addNote}>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Call summary, next step, anything worth keeping" />
+        <button className="abtn" type="submit">
+          Add note
+        </button>
+      </form>
+      {notes.data.length ? (
+        <ul className="notes">
+          {notes.data.map((n) => (
+            <li key={n.id}>
+              <p className="prewrap">{n.text}</p>
+              <span>
+                {n.by} {dateTime(n.createdAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Empty>No notes yet.</Empty>
+      )}
+    </Drawer>
+  );
+}
+
+function NewLeadDrawer({ onClose }: { onClose: () => void }) {
+  const [v, setV] = useState({ name: "", email: "", company: "", need: "", source: "referral" });
+  const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV((x) => ({ ...x, [k]: e.target.value }));
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    await createRecord(COLLECTIONS.leads, {
+      ...v,
+      email: v.email.trim().toLowerCase(),
+      type: "manual",
+      status: "new",
+      temperature: "unrated",
+    });
+    onClose();
+  }
+
+  return (
+    <Drawer title="Add a lead" onClose={onClose}>
+      <form className="aform" onSubmit={submit}>
+        <AField label="Name">
+          <input value={v.name} onChange={set("name")} required />
+        </AField>
+        <AField label="Email">
+          <input type="email" value={v.email} onChange={set("email")} required />
+        </AField>
+        <AField label="Company">
+          <input value={v.company} onChange={set("company")} />
+        </AField>
+        <AField label="Source">
+          <select value={v.source} onChange={set("source")}>
+            <option value="referral">Referral</option>
+            <option value="outreach">Outreach</option>
+            <option value="upwork">Upwork</option>
+            <option value="website">Website</option>
+            <option value="other">Other</option>
+          </select>
+        </AField>
+        <AField label="What they need">
+          <textarea value={v.need} onChange={set("need")} />
+        </AField>
+        <button className="abtn abtn--primary" type="submit">
+          Save lead
+        </button>
+      </form>
+    </Drawer>
+  );
+}
+
+export default function LeadsPage() {
+  const { data, loading, error } = useCollection<Lead>(COLLECTIONS.leads);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [openId, setOpenId] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const term = search.trim().toLowerCase();
+  const rows = data.filter(
+    (l) =>
+      (status === "all" || l.status === status) &&
+      (!term || [l.name, l.email, l.company].some((f) => (f || "").toLowerCase().includes(term)))
+  );
+  const open = data.find((l) => l.id === openId);
+
+  return (
+    <>
+      <PageTitle title="Leads" sub="Everyone who used the contact form, booked a call, or was added by hand.">
+        <button className="abtn abtn--primary" type="button" onClick={() => setAdding(true)}>
+          Add lead
+        </button>
+      </PageTitle>
+      {error ? <p className="adm-error">Could not load leads: {error}</p> : null}
+
+      <div className="toolbar">
+        <input type="search" placeholder="Search name, email, or company" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search leads" />
+        <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
+          <option value="all">All statuses</option>
+          {LEAD_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {label(s)}
+            </option>
+          ))}
+        </select>
+        <span className="count">{rows.length} shown</span>
+      </div>
+
+      <div className="table-wrap">
+        <table className="atable">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Rating</th>
+              <th>Received</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((l) => (
+              <tr key={l.id}>
+                <td>
+                  <button className="rowlink" type="button" onClick={() => setOpenId(l.id)}>
+                    <b>{l.name}</b>
+                    <span>{l.company || l.email}</span>
+                  </button>
+                </td>
+                <td>{label(l.type)}</td>
+                <td>
+                  <Pill value={l.status} />
+                </td>
+                <td>{l.temperature === "unrated" ? "" : <Pill value={l.temperature} />}</td>
+                <td>{shortDate(l.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!loading && !rows.length ? <Empty>No leads match.</Empty> : null}
+      </div>
+
+      {open ? <LeadDrawer key={open.id} lead={open} onClose={() => setOpenId("")} /> : null}
+      {adding ? <NewLeadDrawer onClose={() => setAdding(false)} /> : null}
+    </>
+  );
+}

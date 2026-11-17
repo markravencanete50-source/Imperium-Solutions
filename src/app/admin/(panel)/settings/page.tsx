@@ -1,0 +1,103 @@
+"use client";
+
+import { useEffect, useState, type FormEvent } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { getDb } from "@/lib/firebase/client";
+import { COLLECTIONS, DEFAULT_BOOKING_SETTINGS, type BookingSettings } from "@/lib/crm";
+import { isValidZone } from "@/lib/time";
+import { saveRecord } from "@/components/admin/data";
+import { AField, PageTitle, Panel } from "@/components/admin/ui";
+
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export default function SettingsPage() {
+  const [s, setS] = useState<BookingSettings>(DEFAULT_BOOKING_SETTINGS);
+  const [times, setTimes] = useState(DEFAULT_BOOKING_SETTINGS.times.join(", "));
+  const [loaded, setLoaded] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    getDoc(doc(getDb(), COLLECTIONS.settings, "booking"))
+      .then((snap) => {
+        if (snap.exists()) {
+          const merged = { ...DEFAULT_BOOKING_SETTINGS, ...(snap.data() as Partial<BookingSettings>) };
+          setS(merged);
+          setTimes(merged.times.join(", "));
+        }
+      })
+      .catch((err) => setMessage(`Could not load settings: ${err.message}`))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const list = times
+      .split(/[\s,]+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const bad = list.find((t) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(t));
+    if (bad) return setMessage(`"${bad}" is not a time. Use 24 hour HH:MM, for example 09:30 or 14:00.`);
+    if (!isValidZone(s.timezone)) return setMessage(`"${s.timezone}" is not a time zone. Use a name like America/New_York.`);
+    if (!s.weekdays.length || !list.length) return setMessage("Choose at least one day and one time.");
+    await saveRecord(COLLECTIONS.settings, "booking", { ...s, times: list.sort() });
+    setMessage("Saved. The website shows the new times straight away.");
+  }
+
+  const toggleDay = (d: number) =>
+    setS((x) => ({
+      ...x,
+      weekdays: x.weekdays.includes(d) ? x.weekdays.filter((n) => n !== d) : [...x.weekdays, d].sort(),
+    }));
+  const num = (k: "daysAhead" | "minNoticeHours" | "durationMinutes") => (e: { target: { value: string } }) =>
+    setS((x) => ({ ...x, [k]: Number(e.target.value) || 0 }));
+
+  return (
+    <>
+      <PageTitle title="Settings" sub="Consultation availability and admin access." />
+      <Panel title="Consultation availability">
+        <form className="aform" onSubmit={submit}>
+          <AField label="Time zone the times below are written in">
+            <input value={s.timezone} onChange={(e) => setS({ ...s, timezone: e.target.value.trim() })} disabled={!loaded} />
+          </AField>
+          <fieldset className="days-pick">
+            <legend>Days</legend>
+            {DAYS.map((name, d) => (
+              <label key={name}>
+                <input type="checkbox" checked={s.weekdays.includes(d)} onChange={() => toggleDay(d)} /> {name}
+              </label>
+            ))}
+          </fieldset>
+          <AField label="Start times, 24 hour, separated by commas">
+            <textarea value={times} onChange={(e) => setTimes(e.target.value)} disabled={!loaded} />
+          </AField>
+          <div className="form-row">
+            <AField label="Business days shown">
+              <input type="number" min="1" max="30" value={s.daysAhead} onChange={num("daysAhead")} />
+            </AField>
+            <AField label="Minimum notice in hours">
+              <input type="number" min="0" max="168" value={s.minNoticeHours} onChange={num("minNoticeHours")} />
+            </AField>
+            <AField label="Call length in minutes">
+              <input type="number" min="5" max="120" value={s.durationMinutes} onChange={num("durationMinutes")} />
+            </AField>
+          </div>
+          <div className="drawer-actions">
+            <button className="abtn abtn--primary" type="submit" disabled={!loaded}>
+              Save availability
+            </button>
+            {message ? <span className="saved">{message}</span> : null}
+          </div>
+        </form>
+      </Panel>
+
+      <Panel title="Admin access">
+        <p>
+          Admins are Firebase users that carry the admin claim. To add one, run this from the project folder with the
+          service account variables set:
+        </p>
+        <pre className="code">npm run admin:create -- person@company.com a-strong-password</pre>
+        <p>To remove access, delete the user in the Firebase console under Authentication.</p>
+      </Panel>
+    </>
+  );
+}
