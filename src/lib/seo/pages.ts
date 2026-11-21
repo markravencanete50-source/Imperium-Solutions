@@ -7,6 +7,7 @@ export type SeoPath =
   | "/services"
   | "/how-it-works"
   | "/results"
+  | "/testimonials"
   | "/industries"
   | "/about"
   | "/contact"
@@ -65,6 +66,16 @@ export const seoPages: Record<SeoPath, SeoPage> = {
     schemaType: "WebPage",
     changeFrequency: "monthly",
     priority: 0.8,
+  },
+  "/testimonials": {
+    path: "/testimonials",
+    title: "Client Testimonials and Upwork Reviews",
+    crumb: "Testimonials",
+    description:
+      "Read what clients say about Imperium Solutions. Every written review from our team's completed Upwork contracts, quoted word for word, with its rating.",
+    schemaType: "WebPage",
+    changeFrequency: "monthly",
+    priority: 0.7,
   },
   "/industries": {
     path: "/industries",

@@ -304,7 +304,11 @@ export function Results({ compact = false }: { compact?: boolean }) {
           </li>
         </ul>
         <p className="after-table" data-reveal="">
-          Client reviews are on our{" "}
+          Read the{" "}
+          <Link className="textlink" href="/testimonials">
+            client reviews
+          </Link>{" "}
+          or check every figure on our{" "}
           <a className="textlink" href={site.upworkUrl} target="_blank" rel="noopener">
             Upwork profile
           </a>

@@ -24,6 +24,7 @@ Every engagement follows the same 90 day plan. Days 1 to 30, launch: define requ
 - [Services](https://imperiumsolutionsinc.com/services): front office and back office services
 - [How it works](https://imperiumsolutionsinc.com/how-it-works): the first 90 days and what each side does
 - [Results](https://imperiumsolutionsinc.com/results): documented engagements and Upwork track record
+- [Testimonials](https://imperiumsolutionsinc.com/testimonials): client reviews quoted word for word from completed Upwork contracts
 - [Industries](https://imperiumsolutionsinc.com/industries): industries delivered and supported
 - [About](https://imperiumsolutionsinc.com/about): who we are and how the teams work
 - [Contact](https://imperiumsolutionsinc.com/contact): book a 15 minute consultation or request an estimate

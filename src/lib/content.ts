@@ -167,3 +167,34 @@ export const bookingBudgetOptions = [
   "Over $10,000",
   "Not sure yet",
 ] as const;
+
+// Client reviews, quoted word for word from completed Upwork contracts of Imperium team members.
+// Only reviews with written feedback are listed. Do not edit the quotes. Last checked 2026-11-21.
+export type Testimonial = {
+  quote: string;
+  role: string; // the Upwork job title
+  period: string;
+  rating: string;
+};
+
+export const testimonials: Testimonial[] = [
+  {
+    quote: "Thank you for your contribution to the team! We wish Tom all the best with his future endeavours!",
+    role: "Executive Virtual Assistant and Lead Sourcing",
+    period: "October 2025",
+    rating: "5.0",
+  },
+  {
+    quote: "We look forward to working with Tom in the future!",
+    role: "Customer Success Manager, AI SaaS company",
+    period: "September to October 2025",
+    rating: "5.0",
+  },
+  {
+    quote:
+      "Tom is smart, quick to understand scope of project and very accessible. Look forward to hiring Tom to be our point of contact for Zen Desk work.",
+    role: "Zendesk consultation",
+    period: "February 2023",
+    rating: "5.0",
+  },
+];
