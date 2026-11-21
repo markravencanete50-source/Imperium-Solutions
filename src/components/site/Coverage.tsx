@@ -37,7 +37,7 @@ function Clock({ hour, minute, second }: { hour: number; minute: number; second:
 }
 
 /** Maps the client's coverage window onto the team's shift, with live clocks for both cities. */
-export default function Coverage() {
+export default function Coverage({ tone = "ink" }: { tone?: "ink" | "raise" }) {
   const [market, setMarket] = useState(coverageMarkets[0]);
   const [win, setWin] = useState(coverageWindows[0]);
   // The clock starts after mount so server and browser never disagree about the time.
@@ -63,7 +63,7 @@ export default function Coverage() {
   const isDay = (h: number) => h >= 6 && h < 18;
 
   return (
-    <section className="band band--ink" id="coverage" aria-labelledby="coverage-title">
+    <section className={`band ${tone === "raise" ? "band--raise" : "band--ink"}`} id="coverage" aria-labelledby="coverage-title">
       <div className="wrap">
         <SectionHead
           id="coverage-title"

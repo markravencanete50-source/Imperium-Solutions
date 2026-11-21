@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Rise } from "./bits";
+import { IconLine, Rise } from "./bits";
 import BookingForm from "./BookingForm";
 import { Field, Turnstile, errorText, postJson, validEmail } from "./formKit";
 
@@ -173,10 +173,10 @@ export default function Contact() {
         <div className="contact-intro">
           <Rise id="contact-title">Ready to delegate?</Rise>
           <p data-reveal="">Book a 15 minute consultation. We will discuss your needs and recommend a solution.</p>
-          <ul className="plain">
-            <li data-reveal="">Staffing and responsibilities</li>
-            <li data-reveal="">Onboarding and reporting</li>
-            <li data-reveal="">Pricing for your scope</li>
+          <ul className="plain il-list">
+            <IconLine icon="users">Staffing and responsibilities</IconLine>
+            <IconLine icon="clipboard">Onboarding and reporting</IconLine>
+            <IconLine icon="chart">Pricing for your scope</IconLine>
           </ul>
         </div>
         <div data-reveal="">

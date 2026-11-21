@@ -14,6 +14,7 @@ export default function Page() {
       <PageHero
         title="Talk to Imperium"
         lede="Book a 15 minute consultation or tell us what you need, and we will come back with an estimate."
+        actions="none"
       />
       <Contact />
     </>

@@ -1,26 +1,30 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { RevealList, SectionHead } from "./bits";
+import { SectionHead } from "./bits";
+import { Icon, type IconName } from "./icons";
 
-const stages = [
+const stages: { to: number; days: string; title: string; text: string; icon: IconName }[] = [
   {
     to: 30,
     days: "Days 1 to 30",
     title: "Launch",
-    text: "We define requirements, coordinate staffing, train the team, go live, and establish KPIs.",
+    icon: "flag",
+    text: "Define requirements, staff, train, go live, set KPIs.",
   },
   {
     to: 60,
     days: "Days 31 to 60",
     title: "Stabilize",
-    text: "We monitor quality, coach the team, and improve the workflows.",
+    icon: "refresh",
+    text: "Monitor quality, coach the team, improve workflows.",
   },
   {
     to: 90,
     days: "Days 61 to 90",
     title: "Review",
-    text: "We review performance with you and recommend adjustments or expansion.",
+    icon: "chart",
+    text: "Review performance with you and recommend changes or expansion.",
   },
 ];
 
@@ -81,7 +85,7 @@ export default function Timeline() {
   }, []);
 
   return (
-    <section className="band" id="how-it-works" aria-labelledby="how-title">
+    <section className="band band--raise" id="how-it-works" aria-labelledby="how-title">
       <div className="wrap">
         <SectionHead
           id="how-title"
@@ -90,9 +94,12 @@ export default function Timeline() {
         />
         <ol className="plain tl" ref={ref}>
           {stages.map((s) => (
-            <li key={s.to}>
-              <div className="tl-num" data-to={s.to} suppressHydrationWarning>
-                {s.to}
+            <li key={s.to} className="tile">
+              <div className="tl-top">
+                <div className="tl-num" data-to={s.to} suppressHydrationWarning>
+                  {s.to}
+                </div>
+                <Icon name={s.icon} size={28} />
               </div>
               <div className="tl-days">{s.days}</div>
               <h3>{s.title}</h3>
@@ -101,22 +108,6 @@ export default function Timeline() {
           ))}
         </ol>
         <p className="note">Timelines depend on project scope and staffing requirements.</p>
-        <div className="needs">
-          <div data-reveal="">
-            <h3>What we need from you</h3>
-            <p>No documented processes yet? We can help organize them.</p>
-          </div>
-          <RevealList
-            items={[
-              "A point of contact",
-              "Your requirements",
-              "Coverage hours",
-              "System access",
-              "Available product documentation",
-              "Approval of service standards",
-            ]}
-          />
-        </div>
       </div>
     </section>
   );

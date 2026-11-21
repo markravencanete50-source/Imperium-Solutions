@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { nav } from "@/lib/content";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [solid, setSolid] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 24);
@@ -26,7 +28,7 @@ export default function Header() {
         </Link>
         <nav className="nav" id="nav" aria-label="Main">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} onClick={close}>
+            <Link key={item.href} href={item.href} onClick={close} aria-current={pathname === item.href ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
