@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Montserrat } from "next/font/google";
 import { site } from "@/lib/content";
+import { ogImageAlt, ogImageUrl } from "@/lib/seo/config";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -19,17 +20,30 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
+  applicationName: site.name,
   title: {
-    default: "Imperium Solutions | Managed support teams for your front office and back office",
+    default: "Imperium Solutions | Managed Support and Back Office Teams",
     template: "%s | Imperium Solutions",
   },
   description: site.description,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
   openGraph: {
     type: "website",
     siteName: site.name,
-    title: "Imperium Solutions",
+    locale: "en_US",
+    title: "Imperium Solutions | Managed Support and Back Office Teams",
     description: site.description,
-    images: ["/images/front.webp"],
+    images: [{ url: ogImageUrl, width: 1200, height: 630, alt: ogImageAlt }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Imperium Solutions | Managed Support and Back Office Teams",
+    description: site.description,
+    images: [{ url: ogImageUrl, alt: ogImageAlt }],
   },
 };
 

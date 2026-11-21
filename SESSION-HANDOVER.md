@@ -80,3 +80,11 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - `GET /api/availability?start=YYYY-MM-DD&days=1..42&tz=Zone[&summary=1]` returns open and taken slots (ISO) for days in the visitor's zone; `summary=1` returns only per day counts. The booking route keeps the slot id transaction and re-checks the slot server side, and also rejects overlaps when a call is longer than the step.
 - Answers (company, industry, needs[], budget, notes) are stored on the booking and the lead, shown in the admin lead drawer and bookings page, and included in both emails.
 - Tested on the emulators only. Not yet clicked through on production.
+
+## 2026-11-21 SEO / AEO / GEO pass (branch seo-audit, NOT pushed)
+
+- SEO facts live in `src/lib/seo/`: `pages.ts` (titles, descriptions, schema types, `CONTENT_LAST_MODIFIED` constant used by the sitemap), `schema.ts` (typed JSON-LD builders), `faq.ts`, `services.ts`, `metadata.ts` (`pageMetadata(path)`), `config.ts`.
+- Every public page calls `pageMetadata(path)` and renders `<Breadcrumbs path />` once near the top (visible trail plus one JSON-LD graph: Organization, WebSite, page, BreadcrumbList, Services on /services). Home has a visible FAQ (`src/components/seo/Faq.tsx`) with FAQPage JSON-LD. `RelatedPages` exists but is unused.
+- Share card is `/og.png` and the Organization logo is `/logo.png`, both drawn by `next/og` (brand text only). Replace the logo with the real file when one exists.
+- `robots.ts` names the search and AI crawlers explicitly; `public/llms.txt`; `X-Robots-Tag` on /admin and /api; custom `not-found.tsx` (noindex).
+- When page copy changes, update the matching description in `src/lib/seo/pages.ts` (140 to 160 chars) and bump `CONTENT_LAST_MODIFIED`.

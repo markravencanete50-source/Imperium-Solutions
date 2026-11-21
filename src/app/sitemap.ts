@@ -1,11 +1,14 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/lib/content";
+import { absoluteUrl } from "@/lib/seo/config";
+import { CONTENT_LAST_MODIFIED, seoPages, seoPaths } from "@/lib/seo/pages";
 
+// Every indexable public route. /admin and /api are excluded on purpose.
+// lastModified is a fixed constant (cacheComponents forbids new Date() while prerendering).
 export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = ["", "/services", "/how-it-works", "/results", "/industries", "/about", "/contact", "/careers", "/privacy"];
-  return paths.map((p) => ({
-    url: `${site.url}${p}`,
-    changeFrequency: p === "" ? "weekly" : "monthly",
-    priority: p === "" ? 1 : 0.7,
+  return seoPaths.map((path) => ({
+    url: absoluteUrl(path),
+    lastModified: CONTENT_LAST_MODIFIED,
+    changeFrequency: seoPages[path].changeFrequency,
+    priority: seoPages[path].priority,
   }));
 }

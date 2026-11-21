@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { PageHero } from "@/components/site/bits";
 import { site } from "@/lib/content";
 
-export const metadata: Metadata = {
-  title: "Careers",
-  description: "Work from home with Imperium Solutions in customer support, virtual assistance, and operations roles.",
-  alternates: { canonical: "/careers" },
-};
+export const metadata: Metadata = pageMetadata("/careers");
 
 export default function Page() {
   return (
@@ -15,6 +13,7 @@ export default function Page() {
         title="Work with Imperium"
         lede="We hire customer support, virtual assistance, and operations people who work from home on client hours."
       />
+      <Breadcrumbs path="/careers" />
       <section className="band">
         <div className="wrap prose">
           <h2 style={{ marginTop: 0 }}>How to apply</h2>
