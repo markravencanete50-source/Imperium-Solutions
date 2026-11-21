@@ -55,6 +55,30 @@ export type Activity = {
   createdAt?: Stamp;
 };
 
+export const EMAIL_KINDS = {
+  lead_team: "Team notification",
+  lead_visitor: "Confirmation to visitor",
+  booking_team: "Booking notification",
+  booking_visitor: "Booking confirmation",
+  manual: "Sent from admin",
+} as const;
+export type EmailKind = keyof typeof EMAIL_KINDS;
+
+/** One row of leads/{id}/emails, written by the server for every outbound email. */
+export type EmailLog = {
+  id: string;
+  direction: "out";
+  kind: EmailKind;
+  to: string;
+  subject: string;
+  text: string;
+  status: "sent" | "failed" | "skipped";
+  resendId?: string;
+  error?: string;
+  by?: string;
+  createdAt?: Stamp;
+};
+
 export type Client = {
   id: string;
   name: string;

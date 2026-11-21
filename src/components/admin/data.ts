@@ -69,12 +69,14 @@ export function removeRecord(path: string, id: string) {
   return deleteDoc(doc(getDb(), path, id));
 }
 
-/** Deletes a lead and its notes together, so no orphaned activities are left behind. */
+/** Deletes a lead with its notes and email log together, so no orphaned activities are left behind. */
 export async function removeLead(id: string) {
   const db = getDb();
   const notes = await getDocs(collection(db, COLLECTIONS.leads, id, "activities"));
+  const emails = await getDocs(collection(db, COLLECTIONS.leads, id, "emails"));
   const batch = writeBatch(db);
   notes.forEach((n) => batch.delete(n.ref));
+  emails.forEach((m) => batch.delete(m.ref));
   batch.delete(doc(db, COLLECTIONS.leads, id));
   return batch.commit();
 }

@@ -1,9 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb, NotConfiguredError } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/crm";
 import { leadSchema } from "@/lib/validation";
 import { notify, verifyTurnstile } from "@/lib/server/guards";
+import { sendLeadEmails } from "@/lib/server/outbound";
 
 // Estimate requests from the public contact form.
 export async function POST(request: NextRequest) {
@@ -60,6 +61,23 @@ export async function POST(request: NextRequest) {
       teamSize: input.teamSize,
       startDate: input.startDate || "",
     });
+
+    // Emails go out after the response, so the visitor never waits on them.
+    after(() =>
+      Promise.allSettled([
+        sendLeadEmails({
+          leadId: ref.id,
+          name: input.name,
+          email: input.email,
+          company: input.company,
+          need: input.need,
+          side: input.side,
+          coverage: input.coverage,
+          teamSize: input.teamSize,
+          startDate: input.startDate || "",
+        }),
+      ])
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {

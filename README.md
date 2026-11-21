@@ -19,7 +19,7 @@ Stack: Next.js 16 (App Router, TypeScript), Firebase (Firestore and Auth), GitHu
 
 How data flows: the public site never talks to Firestore directly. The forms post to the API routes, which validate the input with zod and write with the Firebase Admin SDK. The admin dashboard reads and writes Firestore live from the browser, and the security rules allow that only for signed in users that carry the `admin` custom claim.
 
-Firestore collections: `leads` (with a `activities` subcollection for notes), `bookings`, `clients`, `deals`, `payments`, `settings/booking`.
+Firestore collections: `leads` (with `activities` for notes and `emails` for the outbound email log), `bookings`, `clients`, `deals`, `payments`, `settings/booking`.
 
 ## Setup
 
@@ -49,6 +49,7 @@ Every push to `main` deploys automatically.
 ## Optional extras
 
 - Notifications: set `MAKE_WEBHOOK_URL` to a Make.com custom webhook. Every new lead and booking is posted there as JSON (`event` is `lead.created` or `booking.created`), so a scenario can send the email to the team and the confirmation to the visitor. Without it, leads still land in the admin dashboard but nobody is notified.
+- Email (Resend): set `RESEND_API_KEY` (also in Vercel). Every estimate request and booking then sends a notification to the team (`EMAIL_TEAM_TO`, default tom@imperiumsolutionshq.com) and a confirmation to the visitor from `EMAIL_FROM` (default `Imperium Solutions <tom@imperiumsolutionshq.com>`, a verified Resend domain). Booking confirmations carry an .ics calendar file. Replies go to the team address through reply-to. Admins can also write to a lead from the lead drawer. Every email is logged under `leads/{id}/emails`. Without the key the site works as before and automatic emails are logged with status `skipped`.
 - Spam check: set both Turnstile keys from the Cloudflare dashboard. The forms also carry a hidden honeypot field either way.
 
 ## Local testing without a Firebase project

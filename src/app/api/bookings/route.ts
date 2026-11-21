@@ -1,10 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb, NotConfiguredError } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/crm";
 import { bookingSchema } from "@/lib/validation";
 import { getOpenSlots, slotId } from "@/lib/server/availability";
 import { notify, verifyTurnstile } from "@/lib/server/guards";
+import { sendBookingEmails } from "@/lib/server/outbound";
 
 class SlotTakenError extends Error {}
 
@@ -95,6 +96,21 @@ export async function POST(request: NextRequest) {
       when,
       visitorTimezone: input.visitorTimezone,
     });
+
+    after(() =>
+      Promise.allSettled([
+        sendBookingEmails({
+          leadId: leadRef.id,
+          bookingId: bookingRef.id,
+          name: input.name,
+          email: input.email,
+          slot,
+          visitorTimezone: input.visitorTimezone,
+          settingsTimezone: settings.timezone,
+          durationMinutes: settings.durationMinutes,
+        }),
+      ])
+    );
 
     return NextResponse.json({ ok: true, slot: slot.toISOString() });
   } catch (err) {

@@ -9,11 +9,14 @@ import {
   dateTime,
   label,
   shortDate,
+  EMAIL_KINDS,
   type Activity,
+  type EmailLog,
   type Lead,
 } from "@/lib/crm";
 import { convertLead, createRecord, removeLead, updateRecord, useCollection } from "@/components/admin/data";
 import { useAuth } from "@/components/admin/auth";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import { AField, ConfirmButton, Drawer, Empty, ErrorNote, PageTitle, Pill, useAction } from "@/components/admin/ui";
 
 function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
@@ -23,6 +26,40 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const { error, run } = useAction();
+  const emails = useCollection<EmailLog>(`${COLLECTIONS.leads}/${lead.id}/emails`);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const mail = useAction();
+
+  async function sendEmail(e: FormEvent) {
+    e.preventDefault();
+    if (!subject.trim() || !body.trim()) return;
+    setSending(true);
+    try {
+      const ok = await mail.run(async () => {
+        const current = getFirebaseAuth().currentUser;
+        if (!current) throw new Error("you are signed out");
+        const token = await current.getIdToken();
+        const res = await fetch("/api/admin/email", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+          body: JSON.stringify({ leadId: lead.id, subject: subject.trim(), body: body.trim() }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+          if (data.error === "email_not_configured") throw new Error("email is not set up yet (RESEND_API_KEY is missing)");
+          throw new Error(data.detail || data.error || `request failed (${res.status})`);
+        }
+      }, "Could not send the email");
+      if (ok) {
+        setSubject("");
+        setBody("");
+      }
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function addNote(e: FormEvent) {
     e.preventDefault();
@@ -158,6 +195,42 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
           }}
         />
       </div>
+
+      <h3>Email</h3>
+      <ErrorNote message={mail.error} />
+      <form className="note-form email-form" onSubmit={sendEmail}>
+        <AField label={`To ${lead.email}`}>
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} placeholder="Subject" required />
+        </AField>
+        <AField label="Message">
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={10000} rows={6} placeholder="Write your reply. Replies come to the team inbox." required />
+        </AField>
+        <button className="abtn abtn--primary" type="submit" disabled={sending || !subject.trim() || !body.trim()}>
+          {sending ? "Sending" : "Send email"}
+        </button>
+      </form>
+      {emails.data.length ? (
+        <ul className="notes emails">
+          {emails.data.map((m) => (
+            <li key={m.id}>
+              <p>
+                <b>{m.subject}</b>
+              </p>
+              <span>
+                {EMAIL_KINDS[m.kind] || label(m.kind)} to {m.to}. <span className={`pill pill--${m.status === "sent" ? "won" : m.status === "failed" ? "lost" : "new"}`}>{m.status}</span>{" "}
+                {dateTime(m.createdAt)}
+                {m.error ? ` Error: ${m.error}` : ""}
+              </span>
+              <details>
+                <summary>Show text</summary>
+                <p className="prewrap">{m.text}</p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Empty>No emails yet.</Empty>
+      )}
 
       <h3>Notes</h3>
       <form className="note-form" onSubmit={addNote}>

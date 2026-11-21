@@ -130,6 +130,12 @@
 .notes{list-style:none;margin:14px 0 0;padding:0}
 .notes li{padding:10px 0;border-top:1px solid var(--a-line)}
 .notes span{font-size:12px;color:var(--a-muted)}
+.adm .email-form{justify-items:stretch}
+.adm .email-form .abtn{justify-self:start}
+.adm .emails p{margin:0 0 4px}
+.adm .emails details{margin-top:6px;font-size:13px}
+.adm .emails summary{cursor:pointer;color:var(--a-muted)}
+.adm .emails details .prewrap{margin:8px 0 0;color:var(--a-text)}
 .pay-form{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .pay-form input,.pay-form select{flex:1 1 130px;min-width:0}
 .days-pick{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0;padding:0;border:0}
