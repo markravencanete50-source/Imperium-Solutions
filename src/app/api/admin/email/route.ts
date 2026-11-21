@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
-import { getAdminAuth, getAdminDb, NotConfiguredError } from "@/lib/firebase/admin";
+import { getAdminDb, NotConfiguredError } from "@/lib/firebase/admin";
+import { verifyAdminToken } from "@/lib/server/verifyAdmin";
 import { COLLECTIONS } from "@/lib/crm";
 import { emailFrom, isEmailConfigured, sendEmail, teamReplyTo } from "@/lib/server/email";
 import { manualEmail } from "@/lib/server/emailTemplates";
@@ -19,15 +20,12 @@ export async function POST(request: NextRequest) {
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  let adminEmail = "";
-  try {
-    const decoded = await getAdminAuth().verifyIdToken(token);
-    if (decoded.admin !== true) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    adminEmail = decoded.email || "";
-  } catch (err) {
-    if (err instanceof NotConfiguredError) return NextResponse.json({ error: "not_configured" }, { status: 503 });
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const check = await verifyAdminToken(token);
+  if (!check.ok) {
+    const error = check.status === 403 ? "forbidden" : check.status === 503 ? "not_configured" : "unauthorized";
+    return NextResponse.json({ error }, { status: check.status });
   }
+  const adminEmail = check.email;
 
   let json: unknown;
   try {
