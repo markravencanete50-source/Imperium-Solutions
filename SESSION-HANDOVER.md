@@ -88,3 +88,10 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - Share card is `/og.png` and the Organization logo is `/logo.png`, both drawn by `next/og` (brand text only). Replace the logo with the real file when one exists.
 - `robots.ts` names the search and AI crawlers explicitly; `public/llms.txt`; `X-Robots-Tag` on /admin and /api; custom `not-found.tsx` (noindex).
 - When page copy changes, update the matching description in `src/lib/seo/pages.ts` (140 to 160 chars) and bump `CONTENT_LAST_MODIFIED`.
+
+## 2026-11-21 late: redesign, SEO, testimonials, Search Console
+
+- LIVE: redesign (5 second hero, tile layout), SEO/AEO/GEO pass (per page metadata, JSON-LD graph, robots with named AI crawlers, /llms.txt, /og.png, sitemap, breadcrumbs, home FAQ, footer link hub), and /testimonials (3 verbatim written Upwork reviews; only written reviews that exist across the 4 member profiles as of 2026-11-21). No Review/AggregateRating markup on purpose (self-serving reviews are not eligible and are a policy risk).
+- Google Search Console: Domain property `imperiumsolutionsinc.com` under markravencanete50@gmail.com, verified by DNS TXT `google-site-verification=...` on @ in GoDaddy (do not delete that record). Sitemap https://imperiumsolutionsinc.com/sitemap.xml submitted 2026-11-21. Indexing requested for /, /services, /contact, /testimonials.
+- Check in about a week: Pages report, sitemap "Success" with 10 URLs, and any "Google chose different canonical" (vercel.app duplicate host).
+- Open content items: privacy policy legal review, real team photos, Upwork figures kept current, more written reviews.
