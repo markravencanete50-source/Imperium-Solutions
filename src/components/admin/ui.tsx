@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 // Small building blocks shared by the admin pages.
 
@@ -90,6 +90,34 @@ export function ConfirmButton({ label, onConfirm }: { label: string; onConfirm: 
       {label}
     </button>
   );
+}
+
+/**
+ * Runs a write and keeps its failure for display. `run` resolves true when the write succeeded,
+ * so callers only clear a form or close a drawer on success.
+ */
+export function useAction() {
+  const [error, setError] = useState("");
+  const run = useCallback(async (fn: () => Promise<unknown>, what = "Could not save"): Promise<boolean> => {
+    setError("");
+    try {
+      await fn();
+      return true;
+    } catch (err) {
+      setError(`${what}: ${err instanceof Error ? err.message : "something went wrong"}`);
+      return false;
+    }
+  }, []);
+  return { error, run, clear: () => setError("") };
+}
+
+/** The red message line shown when a write fails. */
+export function ErrorNote({ message }: { message: string }) {
+  return message ? (
+    <p className="adm-error" role="alert">
+      {message}
+    </p>
+  ) : null;
 }
 
 export function Empty({ children }: { children: ReactNode }) {

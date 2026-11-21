@@ -6,6 +6,8 @@ import { bookingSchema } from "@/lib/validation";
 import { getOpenSlots, slotId } from "@/lib/server/availability";
 import { notify, verifyTurnstile } from "@/lib/server/guards";
 
+class SlotTakenError extends Error {}
+
 // Books a 15 minute consultation and creates the matching lead.
 export async function POST(request: NextRequest) {
   let json: unknown;
@@ -48,36 +50,37 @@ export async function POST(request: NextRequest) {
       timeZoneName: "short",
     });
 
-    const batch = db.batch();
-    batch.create(bookingRef, {
-      slotStart: Timestamp.fromDate(slot),
-      durationMinutes: settings.durationMinutes,
-      name: input.name,
-      email: input.email,
-      visitorTimezone: input.visitorTimezone,
-      status: "booked",
-      leadId: leadRef.id,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    batch.create(leadRef, {
-      type: "consultation",
-      name: input.name,
-      email: input.email,
-      company: "",
-      need: `Consultation booked for ${when}.`,
-      status: "new",
-      temperature: "unrated",
-      source: "website",
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
     try {
-      await batch.commit();
+      await db.runTransaction(async (tx) => {
+        // A cancelled booking keeps its document, so a free slot may already have one: reuse it.
+        // The read and write on the same document keep two concurrent requests from both succeeding.
+        const existing = await tx.get(bookingRef);
+        if (existing.exists && existing.data()?.status !== "cancelled") throw new SlotTakenError();
+        tx.set(bookingRef, {
+          slotStart: Timestamp.fromDate(slot),
+          durationMinutes: settings.durationMinutes,
+          name: input.name,
+          email: input.email,
+          visitorTimezone: input.visitorTimezone,
+          status: "booked",
+          leadId: leadRef.id,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        tx.create(leadRef, {
+          type: "consultation",
+          name: input.name,
+          email: input.email,
+          company: "",
+          need: `Consultation booked for ${when}.`,
+          status: "new",
+          temperature: "unrated",
+          source: "website",
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      });
     } catch (err) {
-      // ALREADY_EXISTS: someone took the slot between the check and the write.
-      const code = (err as { code?: number | string }).code;
-      if (code === 6 || code === "already-exists") {
+      if (err instanceof SlotTakenError) {
         return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
       }
       throw err;

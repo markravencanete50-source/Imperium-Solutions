@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { COLLECTIONS, money, monthKey, shortDate, toDate, type Client, type Deal, type Payment } from "@/lib/crm";
 import { createRecord, removeRecord, useCollection, useNow } from "@/components/admin/data";
-import { BarChart, ConfirmButton, Empty, Kpi, PageTitle, Panel } from "@/components/admin/ui";
+import { BarChart, ConfirmButton, Empty, ErrorNote, Kpi, PageTitle, Panel, useAction } from "@/components/admin/ui";
 
 const today = () => new Date().toLocaleDateString("en-CA");
 
@@ -11,6 +11,7 @@ export default function SalesPage() {
   const payments = useCollection<Payment>(COLLECTIONS.payments, "date");
   const clients = useCollection<Client>(COLLECTIONS.clients, "name", "asc");
   const deals = useCollection<Deal>(COLLECTIONS.deals);
+  const { error: writeError, run } = useAction();
   const [form, setForm] = useState({ clientId: "", amount: "", date: today(), note: "" });
 
   const now = new Date(useNow());
@@ -36,14 +37,18 @@ export default function SalesPage() {
     e.preventDefault();
     const client = clients.data.find((c) => c.id === form.clientId);
     if (!client || !(Number(form.amount) > 0)) return;
-    await createRecord(COLLECTIONS.payments, {
-      clientId: client.id,
-      clientName: client.name,
-      amount: Number(form.amount),
-      date: form.date,
-      note: form.note.trim(),
-    });
-    setForm({ clientId: form.clientId, amount: "", date: today(), note: "" });
+    const ok = await run(
+      () =>
+        createRecord(COLLECTIONS.payments, {
+          clientId: client.id,
+          clientName: client.name,
+          amount: Number(form.amount),
+          date: form.date,
+          note: form.note.trim(),
+        }),
+      "Could not record the payment"
+    );
+    if (ok) setForm({ clientId: form.clientId, amount: "", date: today(), note: "" });
   }
 
   const error = payments.error || clients.error || deals.error;
@@ -52,6 +57,7 @@ export default function SalesPage() {
     <>
       <PageTitle title="Sales" sub="Money received, recurring revenue, and deals won." />
       {error ? <p className="adm-error">Could not load sales: {error}</p> : null}
+      <ErrorNote message={writeError} />
 
       <div className="kpis">
         <Kpi label="Monthly recurring" value={money(mrr)} hint="From active clients" />
@@ -102,7 +108,7 @@ export default function SalesPage() {
                       <td className="num">{money(p.amount)}</td>
                       <td>{p.note}</td>
                       <td>
-                        <ConfirmButton label="Delete" onConfirm={() => removeRecord(COLLECTIONS.payments, p.id)} />
+                        <ConfirmButton label="Delete" onConfirm={() => run(() => removeRecord(COLLECTIONS.payments, p.id), "Could not delete the payment")} />
                       </td>
                     </tr>
                   ))}

@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { CLIENT_STATUSES, COLLECTIONS, label, money, shortDate, type Client, type Payment } from "@/lib/crm";
-import { createRecord, removeRecord, updateRecord, useCollection } from "@/components/admin/data";
-import { AField, ConfirmButton, Drawer, Empty, Kpi, PageTitle, Pill } from "@/components/admin/ui";
+import { createRecord, removeClient, updateRecord, useCollection } from "@/components/admin/data";
+import { AField, ConfirmButton, Drawer, Empty, ErrorNote, Kpi, PageTitle, Pill, useAction } from "@/components/admin/ui";
 
 type Draft = {
   name: string;
@@ -33,6 +33,7 @@ function ClientDrawer({ client, payments, onClose }: { client: Client | null; pa
   });
   const [pay, setPay] = useState({ amount: "", date: today(), note: "" });
   const [saved, setSaved] = useState(false);
+  const { error, run } = useAction();
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => {
     setSaved(false);
     setV((x) => ({ ...x, [k]: e.target.value }));
@@ -42,25 +43,27 @@ function ClientDrawer({ client, payments, onClose }: { client: Client | null; pa
     e.preventDefault();
     const data = { ...v, name: v.name.trim(), monthlyValue: Number(v.monthlyValue) || 0 };
     if (client) {
-      await updateRecord(COLLECTIONS.clients, client.id, data);
-      setSaved(true);
+      if (await run(() => updateRecord(COLLECTIONS.clients, client.id, data), "Could not save the client")) setSaved(true);
     } else {
-      await createRecord(COLLECTIONS.clients, data);
-      onClose();
+      if (await run(() => createRecord(COLLECTIONS.clients, data), "Could not save the client")) onClose();
     }
   }
 
   async function addPayment(e: FormEvent) {
     e.preventDefault();
     if (!client || !(Number(pay.amount) > 0)) return;
-    await createRecord(COLLECTIONS.payments, {
-      clientId: client.id,
-      clientName: client.name,
-      amount: Number(pay.amount),
-      date: pay.date,
-      note: pay.note.trim(),
-    });
-    setPay({ amount: "", date: today(), note: "" });
+    const ok = await run(
+      () =>
+        createRecord(COLLECTIONS.payments, {
+          clientId: client.id,
+          clientName: client.name,
+          amount: Number(pay.amount),
+          date: pay.date,
+          note: pay.note.trim(),
+        }),
+      "Could not record the payment"
+    );
+    if (ok) setPay({ amount: "", date: today(), note: "" });
   }
 
   const own = client ? payments.filter((p) => p.clientId === client.id) : [];
@@ -68,6 +71,7 @@ function ClientDrawer({ client, payments, onClose }: { client: Client | null; pa
 
   return (
     <Drawer title={client ? client.name : "Add a client"} onClose={onClose}>
+      <ErrorNote message={error} />
       <form className="aform" onSubmit={submit}>
         <AField label="Company">
           <input value={v.name} onChange={set("name")} required />
@@ -117,8 +121,7 @@ function ClientDrawer({ client, payments, onClose }: { client: Client | null; pa
             <ConfirmButton
               label="Delete client"
               onConfirm={async () => {
-                await removeRecord(COLLECTIONS.clients, client.id);
-                onClose();
+                if (await run(() => removeClient(client.id), "Could not delete the client")) onClose();
               }}
             />
           ) : null}

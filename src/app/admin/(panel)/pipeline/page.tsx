@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { COLLECTIONS, DEAL_STAGES, label, money, shortDate, type Deal, type DealStage } from "@/lib/crm";
 import { createRecord, removeRecord, serverTimestamp, updateRecord, useCollection } from "@/components/admin/data";
-import { AField, ConfirmButton, Drawer, PageTitle } from "@/components/admin/ui";
+import { AField, ConfirmButton, Drawer, ErrorNote, PageTitle, useAction } from "@/components/admin/ui";
 
 function moveDeal(deal: Deal, stage: DealStage) {
   if (deal.stage === stage) return;
@@ -14,7 +14,7 @@ function moveDeal(deal: Deal, stage: DealStage) {
   });
 }
 
-type Draft = { title: string; company: string; value: string; billing: Deal["billing"]; expectedClose: string; stage: DealStage };
+type Draft = { title: string; company: string; value: string; billing: Deal["billing"]; expectedClose: string };
 
 function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void }) {
   const [v, setV] = useState<Draft>({
@@ -23,8 +23,11 @@ function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void 
     value: deal ? String(deal.value || 0) : "",
     billing: deal?.billing || "monthly",
     expectedClose: deal?.expectedClose || "",
-    stage: deal?.stage || "discovery",
   });
+  // Only a stage the user picked here is written back; otherwise the live stage of the deal is kept.
+  const [pickedStage, setPickedStage] = useState<DealStage | null>(null);
+  const stage = pickedStage ?? deal?.stage ?? "discovery";
+  const { error, run } = useAction();
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setV((x) => ({ ...x, [k]: e.target.value }));
 
   async function submit(e: FormEvent) {
@@ -35,19 +38,22 @@ function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void 
       value: Number(v.value) || 0,
       billing: v.billing,
       expectedClose: v.expectedClose,
-      stage: v.stage,
+      stage,
     };
-    if (deal) {
-      const wonChange = deal.stage !== v.stage ? { wonAt: v.stage === "won" ? serverTimestamp() : null } : {};
-      await updateRecord(COLLECTIONS.deals, deal.id, { ...data, ...wonChange });
-    } else {
-      await createRecord(COLLECTIONS.deals, { ...data, wonAt: v.stage === "won" ? serverTimestamp() : null });
-    }
-    onClose();
+    const ok = await run(async () => {
+      if (deal) {
+        const wonChange = deal.stage !== stage ? { wonAt: stage === "won" ? serverTimestamp() : null } : {};
+        await updateRecord(COLLECTIONS.deals, deal.id, { ...data, ...wonChange });
+      } else {
+        await createRecord(COLLECTIONS.deals, { ...data, wonAt: stage === "won" ? serverTimestamp() : null });
+      }
+    }, "Could not save the deal");
+    if (ok) onClose();
   }
 
   return (
     <Drawer title={deal ? "Edit deal" : "Add a deal"} onClose={onClose}>
+      <ErrorNote message={error} />
       <form className="aform" onSubmit={submit}>
         <AField label="Deal name">
           <input value={v.title} onChange={set("title")} required />
@@ -68,7 +74,7 @@ function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void 
         </div>
         <div className="form-row">
           <AField label="Stage">
-            <select value={v.stage} onChange={set("stage")}>
+            <select value={stage} onChange={(e) => setPickedStage(e.target.value as DealStage)}>
               {DEAL_STAGES.map((s) => (
                 <option key={s} value={s}>
                   {label(s)}
@@ -88,8 +94,7 @@ function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void 
             <ConfirmButton
               label="Delete deal"
               onConfirm={async () => {
-                await removeRecord(COLLECTIONS.deals, deal.id);
-                onClose();
+                if (await run(() => removeRecord(COLLECTIONS.deals, deal.id), "Could not delete the deal")) onClose();
               }}
             />
           ) : null}
@@ -101,10 +106,13 @@ function DealDrawer({ deal, onClose }: { deal: Deal | null; onClose: () => void 
 
 export default function PipelinePage() {
   const { data, error } = useCollection<Deal>(COLLECTIONS.deals);
-  const [editing, setEditing] = useState<Deal | null>(null);
+  const [editingId, setEditingId] = useState("");
+  const { error: writeError, run } = useAction();
+  const move = (deal: Deal, stage: DealStage) => run(async () => moveDeal(deal, stage), "Could not move the deal");
   const [adding, setAdding] = useState(false);
   const [dragId, setDragId] = useState("");
   const [over, setOver] = useState("");
+  const editing = data.find((d) => d.id === editingId);
 
   return (
     <>
@@ -114,6 +122,7 @@ export default function PipelinePage() {
         </button>
       </PageTitle>
       {error ? <p className="adm-error">Could not load deals: {error}</p> : null}
+      <ErrorNote message={writeError} />
 
       <div className="board">
         {DEAL_STAGES.map((stage) => {
@@ -132,7 +141,7 @@ export default function PipelinePage() {
                 e.preventDefault();
                 setOver("");
                 const deal = data.find((d) => d.id === dragId);
-                if (deal) moveDeal(deal, stage);
+                if (deal) move(deal, stage);
               }}
             >
               <header>
@@ -143,7 +152,7 @@ export default function PipelinePage() {
               </header>
               {deals.map((d) => (
                 <article key={d.id} className="deal" draggable onDragStart={() => setDragId(d.id)} onDragEnd={() => setDragId("")}>
-                  <button className="rowlink" type="button" onClick={() => setEditing(d)}>
+                  <button className="rowlink" type="button" onClick={() => setEditingId(d.id)}>
                     <b>{d.title}</b>
                     <span>{d.company}</span>
                   </button>
@@ -151,7 +160,7 @@ export default function PipelinePage() {
                     {money(d.value || 0)} {d.billing === "monthly" ? "per month" : "one time"}
                   </p>
                   {d.expectedClose ? <p className="deal-meta">Closes {shortDate(d.expectedClose)}</p> : null}
-                  <select value={d.stage} onChange={(e) => moveDeal(d, e.target.value as DealStage)} aria-label={`Stage for ${d.title}`}>
+                  <select value={d.stage} onChange={(e) => move(d, e.target.value as DealStage)} aria-label={`Stage for ${d.title}`}>
                     {DEAL_STAGES.map((s) => (
                       <option key={s} value={s}>
                         {label(s)}
@@ -165,7 +174,7 @@ export default function PipelinePage() {
         })}
       </div>
 
-      {editing ? <DealDrawer key={editing.id} deal={editing} onClose={() => setEditing(null)} /> : null}
+      {editing ? <DealDrawer key={editing.id} deal={editing} onClose={() => setEditingId("")} /> : null}
       {adding ? <DealDrawer deal={null} onClose={() => setAdding(false)} /> : null}
     </>
   );

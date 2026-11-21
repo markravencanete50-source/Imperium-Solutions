@@ -11,6 +11,7 @@ export async function getBookingSettings(): Promise<BookingSettings> {
   if (!isValidZone(merged.timezone)) merged.timezone = DEFAULT_BOOKING_SETTINGS.timezone;
   merged.times = (merged.times || []).filter((t) => /^\d{2}:\d{2}$/.test(t));
   merged.daysAhead = Math.min(Math.max(Number(merged.daysAhead) || 10, 1), 30);
+  merged.durationMinutes = Math.min(Math.max(Number(merged.durationMinutes) || DEFAULT_BOOKING_SETTINGS.durationMinutes, 5), 120);
   return merged;
 }
 

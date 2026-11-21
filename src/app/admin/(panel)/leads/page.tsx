@@ -12,9 +12,9 @@ import {
   type Activity,
   type Lead,
 } from "@/lib/crm";
-import { createRecord, removeRecord, updateRecord, useCollection } from "@/components/admin/data";
+import { convertLead, createRecord, removeLead, updateRecord, useCollection } from "@/components/admin/data";
 import { useAuth } from "@/components/admin/auth";
-import { AField, ConfirmButton, Drawer, Empty, PageTitle, Pill } from "@/components/admin/ui";
+import { AField, ConfirmButton, Drawer, Empty, ErrorNote, PageTitle, Pill, useAction } from "@/components/admin/ui";
 
 function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const { user } = useAuth();
@@ -22,47 +22,64 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const notes = useCollection<Activity>(`${COLLECTIONS.leads}/${lead.id}/activities`);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const { error, run } = useAction();
 
   async function addNote(e: FormEvent) {
     e.preventDefault();
     if (!note.trim()) return;
-    await createRecord(`${COLLECTIONS.leads}/${lead.id}/activities`, { text: note.trim(), by: user?.email || "" });
-    setNote("");
+    const ok = await run(
+      () => createRecord(`${COLLECTIONS.leads}/${lead.id}/activities`, { text: note.trim(), by: user?.email || "" }),
+      "Could not add the note"
+    );
+    if (ok) setNote("");
   }
 
   async function convert() {
     setBusy(true);
-    const ref = await createRecord(COLLECTIONS.clients, {
-      name: lead.company || lead.name,
-      contactName: lead.name,
-      email: lead.email,
-      industry: "",
-      services: [lead.side, lead.coverage].filter(Boolean).join(", "),
-      status: "onboarding",
-      monthlyValue: 0,
-      startDate: lead.startDate || "",
-      notes: lead.need || "",
-      leadId: lead.id,
-    });
-    await updateRecord(COLLECTIONS.leads, lead.id, { status: "won", clientId: ref.id });
-    router.push("/admin/clients");
+    try {
+      const ok = await run(
+        () =>
+          convertLead(lead.id, {
+            name: lead.company || lead.name,
+            contactName: lead.name,
+            email: lead.email,
+            industry: "",
+            services: [lead.side, lead.coverage].filter(Boolean).join(", "),
+            status: "onboarding",
+            monthlyValue: 0,
+            startDate: lead.startDate || "",
+            notes: lead.need || "",
+            leadId: lead.id,
+          }),
+        "Could not convert the lead"
+      );
+      if (ok) router.push("/admin/clients");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function createDeal() {
     setBusy(true);
-    await createRecord(COLLECTIONS.deals, {
-      title: `${lead.company || lead.name} support team`,
-      company: lead.company || lead.name,
-      leadId: lead.id,
-      stage: "discovery",
-      value: 0,
-      billing: "monthly",
-      expectedClose: "",
-    });
-    if (lead.status === "new" || lead.status === "contacted") {
-      await updateRecord(COLLECTIONS.leads, lead.id, { status: "qualified" });
+    try {
+      const ok = await run(async () => {
+        await createRecord(COLLECTIONS.deals, {
+          title: `${lead.company || lead.name} support team`,
+          company: lead.company || lead.name,
+          leadId: lead.id,
+          stage: "discovery",
+          value: 0,
+          billing: "monthly",
+          expectedClose: "",
+        });
+        if (lead.status === "new" || lead.status === "contacted") {
+          await updateRecord(COLLECTIONS.leads, lead.id, { status: "qualified" });
+        }
+      }, "Could not create the deal");
+      if (ok) router.push("/admin/pipeline");
+    } finally {
+      setBusy(false);
     }
-    router.push("/admin/pipeline");
   }
 
   const details: [string, string | undefined][] = [
@@ -79,11 +96,12 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
 
   return (
     <Drawer title={lead.name} onClose={onClose}>
+      <ErrorNote message={error} />
       <div className="form-row">
         <AField label="Status">
           <select
             value={lead.status}
-            onChange={(e) => updateRecord(COLLECTIONS.leads, lead.id, { status: e.target.value })}
+            onChange={(e) => run(() => updateRecord(COLLECTIONS.leads, lead.id, { status: e.target.value }), "Could not update the status")}
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -95,7 +113,7 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
         <AField label="Rating">
           <select
             value={lead.temperature}
-            onChange={(e) => updateRecord(COLLECTIONS.leads, lead.id, { temperature: e.target.value })}
+            onChange={(e) => run(() => updateRecord(COLLECTIONS.leads, lead.id, { temperature: e.target.value }), "Could not update the rating")}
           >
             {TEMPERATURES.map((t) => (
               <option key={t} value={t}>
@@ -136,8 +154,7 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
         <ConfirmButton
           label="Delete lead"
           onConfirm={async () => {
-            await removeRecord(COLLECTIONS.leads, lead.id);
-            onClose();
+            if (await run(() => removeLead(lead.id), "Could not delete the lead")) onClose();
           }}
         />
       </div>
@@ -169,22 +186,28 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
 
 function NewLeadDrawer({ onClose }: { onClose: () => void }) {
   const [v, setV] = useState({ name: "", email: "", company: "", need: "", source: "referral" });
+  const { error, run } = useAction();
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV((x) => ({ ...x, [k]: e.target.value }));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    await createRecord(COLLECTIONS.leads, {
-      ...v,
-      email: v.email.trim().toLowerCase(),
-      type: "manual",
-      status: "new",
-      temperature: "unrated",
-    });
-    onClose();
+    const ok = await run(
+      () =>
+        createRecord(COLLECTIONS.leads, {
+          ...v,
+          email: v.email.trim().toLowerCase(),
+          type: "manual",
+          status: "new",
+          temperature: "unrated",
+        }),
+      "Could not save the lead"
+    );
+    if (ok) onClose();
   }
 
   return (
     <Drawer title="Add a lead" onClose={onClose}>
+      <ErrorNote message={error} />
       <form className="aform" onSubmit={submit}>
         <AField label="Name">
           <input value={v.name} onChange={set("name")} required />

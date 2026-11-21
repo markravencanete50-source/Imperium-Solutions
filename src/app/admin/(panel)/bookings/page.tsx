@@ -2,7 +2,7 @@
 
 import { BOOKING_STATUSES, COLLECTIONS, label, toDate, type Booking } from "@/lib/crm";
 import { updateRecord, useCollection, useNow } from "@/components/admin/data";
-import { Empty, PageTitle, Panel } from "@/components/admin/ui";
+import { Empty, ErrorNote, PageTitle, Panel, useAction } from "@/components/admin/ui";
 
 const when = (b: Booking) =>
   toDate(b.slotStart)?.toLocaleString("en-US", {
@@ -13,7 +13,7 @@ const when = (b: Booking) =>
     minute: "2-digit",
   }) ?? "";
 
-function Table({ rows }: { rows: Booking[] }) {
+function Table({ rows, onStatus }: { rows: Booking[]; onStatus: (b: Booking, status: string) => void }) {
   return (
     <div className="table-wrap">
       <table className="atable">
@@ -40,7 +40,7 @@ function Table({ rows }: { rows: Booking[] }) {
               <td>
                 <select
                   value={b.status}
-                  onChange={(e) => updateRecord(COLLECTIONS.bookings, b.id, { status: e.target.value })}
+                  onChange={(e) => onStatus(b, e.target.value)}
                   aria-label={`Status for ${b.name}`}
                 >
                   {BOOKING_STATUSES.map((s) => (
@@ -61,6 +61,9 @@ function Table({ rows }: { rows: Booking[] }) {
 export default function BookingsPage() {
   const { data, error } = useCollection<Booking>(COLLECTIONS.bookings, "slotStart", "asc");
   const now = useNow();
+  const { error: writeError, run } = useAction();
+  const setStatus = (b: Booking, status: string) =>
+    run(() => updateRecord(COLLECTIONS.bookings, b.id, { status }), "Could not update the booking");
   const upcoming = data.filter((b) => (toDate(b.slotStart)?.getTime() ?? 0) >= now);
   const past = data.filter((b) => (toDate(b.slotStart)?.getTime() ?? 0) < now).reverse();
 
@@ -71,11 +74,12 @@ export default function BookingsPage() {
         sub="Consultations booked on the website. Cancelling one frees the time for someone else."
       />
       {error ? <p className="adm-error">Could not load bookings: {error}</p> : null}
+      <ErrorNote message={writeError} />
       <Panel title={`Upcoming (${upcoming.length})`}>
-        {upcoming.length ? <Table rows={upcoming} /> : <Empty>No upcoming consultations.</Empty>}
+        {upcoming.length ? <Table rows={upcoming} onStatus={setStatus} /> : <Empty>No upcoming consultations.</Empty>}
       </Panel>
       <Panel title={`Past (${past.length})`}>
-        {past.length ? <Table rows={past} /> : <Empty>Nothing here yet.</Empty>}
+        {past.length ? <Table rows={past} onStatus={setStatus} /> : <Empty>Nothing here yet.</Empty>}
       </Panel>
     </>
   );

@@ -29,8 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ user: null, isAdmin: false, loading: false, configured: true });
         return;
       }
-      const token = await user.getIdTokenResult();
-      setState({ user, isAdmin: token.claims.admin === true, loading: false, configured: true });
+      try {
+        const token = await user.getIdTokenResult();
+        setState({ user, isAdmin: token.claims.admin === true, loading: false, configured: true });
+      } catch {
+        setState({ user, isAdmin: false, loading: false, configured: true });
+      }
     });
   }, []);
 

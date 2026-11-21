@@ -28,8 +28,6 @@ Imperium Solutions marketing site plus admin CRM. Next.js 16 App Router, TypeScr
 
 Run `npm run typecheck`, `npm run lint`, and `npm run build`. All three pass on the delivered code.
 
-## First tasks
+## Start here
 
-1. `git init`, commit, create the GitHub repository, push.
-2. Follow README Setup and Deploy with the user's Firebase and Vercel accounts.
-3. Work through README "Before launch" with the user.
+The site is live and set up. Read `SESSION-HANDOVER.md` first. It has the current status, any uncommitted work, the open tasks, and how to test locally. Update it at the end of every session.

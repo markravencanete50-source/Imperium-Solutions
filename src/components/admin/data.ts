@@ -5,16 +5,21 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
+  writeBatch,
   type DocumentData,
 } from "firebase/firestore";
 import { getDb } from "@/lib/firebase/client";
+import { COLLECTIONS } from "@/lib/crm";
 
 type Result<T> = { data: T[]; loading: boolean; error: string };
 
@@ -62,6 +67,37 @@ export function saveRecord(path: string, id: string, data: DocumentData) {
 
 export function removeRecord(path: string, id: string) {
   return deleteDoc(doc(getDb(), path, id));
+}
+
+/** Deletes a lead and its notes together, so no orphaned activities are left behind. */
+export async function removeLead(id: string) {
+  const db = getDb();
+  const notes = await getDocs(collection(db, COLLECTIONS.leads, id, "activities"));
+  const batch = writeBatch(db);
+  notes.forEach((n) => batch.delete(n.ref));
+  batch.delete(doc(db, COLLECTIONS.leads, id));
+  return batch.commit();
+}
+
+/** Deletes a client and clears the link on any lead that was converted into it. */
+export async function removeClient(id: string) {
+  const db = getDb();
+  const linked = await getDocs(query(collection(db, COLLECTIONS.leads), where("clientId", "==", id)));
+  const batch = writeBatch(db);
+  linked.forEach((l) => batch.update(l.ref, { clientId: deleteField(), updatedAt: serverTimestamp() }));
+  batch.delete(doc(db, COLLECTIONS.clients, id));
+  return batch.commit();
+}
+
+/** Creates the client and marks the lead won in one atomic write. Returns the new client id. */
+export async function convertLead(leadId: string, client: DocumentData) {
+  const db = getDb();
+  const ref = doc(collection(db, COLLECTIONS.clients));
+  const batch = writeBatch(db);
+  batch.set(ref, { ...client, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  batch.update(doc(db, COLLECTIONS.leads, leadId), { status: "won", clientId: ref.id, updatedAt: serverTimestamp() });
+  await batch.commit();
+  return ref.id;
 }
 
 export { serverTimestamp };

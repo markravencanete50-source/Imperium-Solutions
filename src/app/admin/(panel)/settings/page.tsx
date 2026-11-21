@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [times, setTimes] = useState(DEFAULT_BOOKING_SETTINGS.times.join(", "));
   const [loaded, setLoaded] = useState(false);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     getDoc(doc(getDb(), COLLECTIONS.settings, "booking"))
@@ -24,9 +25,10 @@ export default function SettingsPage() {
           setS(merged);
           setTimes(merged.times.join(", "));
         }
+        // Only a successful read enables the form, so defaults can never overwrite real settings.
+        setLoaded(true);
       })
-      .catch((err) => setMessage(`Could not load settings: ${err.message}`))
-      .finally(() => setLoaded(true));
+      .catch((err) => setLoadError(`Could not load settings: ${err.message}`));
   }, []);
 
   async function submit(e: FormEvent) {
@@ -39,8 +41,14 @@ export default function SettingsPage() {
     if (bad) return setMessage(`"${bad}" is not a time. Use 24 hour HH:MM, for example 09:30 or 14:00.`);
     if (!isValidZone(s.timezone)) return setMessage(`"${s.timezone}" is not a time zone. Use a name like America/New_York.`);
     if (!s.weekdays.length || !list.length) return setMessage("Choose at least one day and one time.");
-    await saveRecord(COLLECTIONS.settings, "booking", { ...s, times: list.sort() });
-    setMessage("Saved. The website shows the new times straight away.");
+    if (!(s.durationMinutes >= 5 && s.durationMinutes <= 120)) return setMessage("Call length must be between 5 and 120 minutes.");
+    if (!(s.daysAhead >= 1 && s.daysAhead <= 30)) return setMessage("Business days shown must be between 1 and 30.");
+    try {
+      await saveRecord(COLLECTIONS.settings, "booking", { ...s, times: list.sort() });
+      setMessage("Saved. The website shows the new times straight away.");
+    } catch (err) {
+      setMessage(`Could not save settings: ${err instanceof Error ? err.message : "something went wrong"}`);
+    }
   }
 
   const toggleDay = (d: number) =>
@@ -54,6 +62,7 @@ export default function SettingsPage() {
   return (
     <>
       <PageTitle title="Settings" sub="Consultation availability and admin access." />
+      {loadError ? <p className="adm-error">{loadError}</p> : null}
       <Panel title="Consultation availability">
         <form className="aform" onSubmit={submit}>
           <AField label="Time zone the times below are written in">
@@ -63,7 +72,7 @@ export default function SettingsPage() {
             <legend>Days</legend>
             {DAYS.map((name, d) => (
               <label key={name}>
-                <input type="checkbox" checked={s.weekdays.includes(d)} onChange={() => toggleDay(d)} /> {name}
+                <input type="checkbox" checked={s.weekdays.includes(d)} onChange={() => toggleDay(d)} disabled={!loaded} /> {name}
               </label>
             ))}
           </fieldset>
@@ -72,13 +81,13 @@ export default function SettingsPage() {
           </AField>
           <div className="form-row">
             <AField label="Business days shown">
-              <input type="number" min="1" max="30" value={s.daysAhead} onChange={num("daysAhead")} />
+              <input type="number" min="1" max="30" value={s.daysAhead} onChange={num("daysAhead")} disabled={!loaded} />
             </AField>
             <AField label="Minimum notice in hours">
-              <input type="number" min="0" max="168" value={s.minNoticeHours} onChange={num("minNoticeHours")} />
+              <input type="number" min="0" max="168" value={s.minNoticeHours} onChange={num("minNoticeHours")} disabled={!loaded} />
             </AField>
             <AField label="Call length in minutes">
-              <input type="number" min="5" max="120" value={s.durationMinutes} onChange={num("durationMinutes")} />
+              <input type="number" min="5" max="120" value={s.durationMinutes} onChange={num("durationMinutes")} disabled={!loaded} />
             </AField>
           </div>
           <div className="drawer-actions">
