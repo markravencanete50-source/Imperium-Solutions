@@ -1,9 +1,9 @@
 import { after, NextResponse, type NextRequest } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentReference } from "firebase-admin/firestore";
 import { getAdminDb, NotConfiguredError } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/crm";
 import { bookingSchema } from "@/lib/validation";
-import { getOpenSlots, slotId } from "@/lib/server/availability";
+import { getAvailability, overlaps, slotId } from "@/lib/server/availability";
 import { notify, verifyTurnstile } from "@/lib/server/guards";
 import { sendBookingEmails } from "@/lib/server/outbound";
 
@@ -32,8 +32,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const slot = new Date(input.slot);
-    const { settings, slots } = await getOpenSlots(new Date());
-    if (!slots.some((s) => s.getTime() === slot.getTime())) {
+    // Server side check that this exact slot exists and is open right now.
+    const { settings, open } = await getAvailability(new Date(), { from: slot, to: new Date(slot.getTime() + 1) });
+    if (!open.some((s) => s.getTime() === slot.getTime())) {
       return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
     }
 
@@ -50,6 +51,25 @@ export async function POST(request: NextRequest) {
       minute: "2-digit",
       timeZoneName: "short",
     });
+    // Bookings that start at a neighbouring slot can still overlap when a call is longer than the step.
+    const reach = settings.allDay ? Math.ceil(settings.durationMinutes / settings.slotStepMinutes) - 1 : 0;
+    const neighbours: DocumentReference[] = [];
+    for (let j = -reach; j <= reach; j++) {
+      if (j !== 0) neighbours.push(db.collection(COLLECTIONS.bookings).doc(slotId(new Date(slot.getTime() + j * settings.slotStepMinutes * 60000))));
+    }
+    const answers = {
+      company: input.company,
+      industry: input.industry,
+      needs: input.needs,
+      budget: input.budget,
+      notes: input.notes,
+    };
+    const summary = [
+      `Consultation booked for ${when}.`,
+      `Needs: ${input.needs.join(", ")}.`,
+      `Budget: ${input.budget}.`,
+      `Industry: ${input.industry}.`,
+    ].join(" ");
 
     try {
       await db.runTransaction(async (tx) => {
@@ -57,11 +77,22 @@ export async function POST(request: NextRequest) {
         // The read and write on the same document keep two concurrent requests from both succeeding.
         const existing = await tx.get(bookingRef);
         if (existing.exists && existing.data()?.status !== "cancelled") throw new SlotTakenError();
+        if (neighbours.length) {
+          for (const n of await tx.getAll(...neighbours)) {
+            const b = n.data();
+            if (!n.exists || !b || b.status === "cancelled" || !b.slotStart) continue;
+            const minutes = Number(b.durationMinutes) > 0 ? Number(b.durationMinutes) : settings.durationMinutes;
+            if (overlaps(slot.getTime(), settings.durationMinutes, (b.slotStart as Timestamp).toMillis(), minutes)) {
+              throw new SlotTakenError();
+            }
+          }
+        }
         tx.set(bookingRef, {
           slotStart: Timestamp.fromDate(slot),
           durationMinutes: settings.durationMinutes,
           name: input.name,
           email: input.email,
+          ...answers,
           visitorTimezone: input.visitorTimezone,
           status: "booked",
           leadId: leadRef.id,
@@ -71,8 +102,8 @@ export async function POST(request: NextRequest) {
           type: "consultation",
           name: input.name,
           email: input.email,
-          company: "",
-          need: `Consultation booked for ${when}.`,
+          ...answers,
+          need: summary,
           status: "new",
           temperature: "unrated",
           source: "website",
@@ -95,6 +126,7 @@ export async function POST(request: NextRequest) {
       slot: slot.toISOString(),
       when,
       visitorTimezone: input.visitorTimezone,
+      ...answers,
     });
 
     after(() =>
@@ -104,6 +136,7 @@ export async function POST(request: NextRequest) {
           bookingId: bookingRef.id,
           name: input.name,
           email: input.email,
+          ...answers,
           slot,
           visitorTimezone: input.visitorTimezone,
           settingsTimezone: settings.timezone,

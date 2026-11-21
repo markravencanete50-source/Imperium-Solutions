@@ -146,3 +146,24 @@ export const photoCredits = [
   { label: "Home office", by: "Michael Proctor, Unsplash", href: "https://unsplash.com/photos/a-desk-with-a-computer-on-it-in-front-of-a-window-juQrGxGCjw8" },
   { label: "Headphones and laptop", by: "Dan Farrell, Unsplash", href: "https://unsplash.com/photos/black-wireless-headphones-beside-macbook-pro-FnR2U1lXsBQ" },
 ];
+
+// Answers the booking form asks for. The same lists drive the form and the server side validation.
+export const bookingIndustryOptions: string[] = [...industries.map((i) => i.name), "Other"];
+
+export const bookingNeedOptions = [
+  "Manpower and staffing",
+  "Marketing",
+  "Customer support",
+  "Admin and back office",
+  "Sales and lead generation",
+  "Other",
+] as const;
+
+export const bookingBudgetOptions = [
+  "Under $1,000",
+  "$1,000 to $3,000",
+  "$3,000 to $5,000",
+  "$5,000 to $10,000",
+  "Over $10,000",
+  "Not sure yet",
+] as const;

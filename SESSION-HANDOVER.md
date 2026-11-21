@@ -72,3 +72,11 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - Contact and careers emails are `tom@imperiumsolutionshq.com` (Vercel env).
 - Do NOT import `firebase-admin/auth` in app code. It loads `jose` via require() and crashes every route on the Vercel runtime (this took the live API down for about 6 minutes on 2026-11-21). Admin ID tokens are verified with `src/lib/server/verifyAdmin.ts` (Identity Toolkit `accounts:lookup`). Scripts under `scripts/` may still use it locally.
 - Not yet clicked through in the browser: the Email box in the lead drawer on production.
+
+## 2026-11-21 booking flow rebuild (NOT committed or deployed)
+
+- Booking form is now two steps in `src/components/site/BookingForm.tsx` (details and needs, then time zone, calendar, 15 minute slot grid) with `DatePicker.tsx`, `TimeZoneSelect.tsx`, `BookingSuccess.tsx`; shared form bits moved to `formKit.tsx`. Option lists live in `content.ts` (`bookingIndustryOptions`, `bookingNeedOptions`, `bookingBudgetOptions`).
+- `BookingSettings` gained `allDay` (default true) and `slotStepMinutes` (15). Defaults now: 7 weekdays, 24 hours, 15 minute calls, 1 hour notice, 60 days ahead (clamp 90). Production has no settings doc, so these go live as is. Admin, Settings has an "Open 24 hours" toggle.
+- `GET /api/availability?start=YYYY-MM-DD&days=1..42&tz=Zone[&summary=1]` returns open and taken slots (ISO) for days in the visitor's zone; `summary=1` returns only per day counts. The booking route keeps the slot id transaction and re-checks the slot server side, and also rejects overlaps when a call is longer than the step.
+- Answers (company, industry, needs[], budget, notes) are stored on the booking and the lead, shown in the admin lead drawer and bookings page, and included in both emails.
+- Tested on the emulators only. Not yet clicked through on production.

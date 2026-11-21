@@ -40,6 +40,11 @@ export type Lead = {
   coverage?: string;
   teamSize?: string;
   startDate?: string;
+  // Answers from the booking form.
+  industry?: string;
+  needs?: string[];
+  budget?: string;
+  notes?: string;
   status: LeadStatus;
   temperature: Temperature;
   source: string;
@@ -125,6 +130,12 @@ export type Booking = {
   slotStart?: Stamp;
   name: string;
   email: string;
+  company?: string;
+  industry?: string;
+  needs?: string[];
+  budget?: string;
+  notes?: string;
+  durationMinutes?: number;
   visitorTimezone?: string;
   status: BookingStatus;
   leadId?: string;
@@ -133,20 +144,29 @@ export type Booking = {
 
 export type BookingSettings = {
   timezone: string;
-  weekdays: number[]; // 0 Sunday to 6 Saturday
-  times: string[]; // "HH:MM" in the settings time zone
-  daysAhead: number;
+  /** When true, every slot of every day is open (all 7 weekdays) and `weekdays` and `times` are ignored. */
+  allDay: boolean;
+  /** Minutes between slot starts when `allDay` is on. */
+  slotStepMinutes: number;
+  weekdays: number[]; // 0 Sunday to 6 Saturday, used when allDay is off
+  times: string[]; // "HH:MM" in the settings time zone, used when allDay is off
+  daysAhead: number; // calendar days when allDay is on, business days when it is off
   minNoticeHours: number;
   durationMinutes: number;
 };
 
-// Placeholder availability. Set the real hours in Admin, Settings.
+export const MAX_DAYS_AHEAD = 90;
+
+// What goes live when no settings document exists: open 24 hours, 7 days a week, 15 minute calls.
+// The admin can narrow this in Admin, Settings.
 export const DEFAULT_BOOKING_SETTINGS: BookingSettings = {
   timezone: "America/New_York",
-  weekdays: [1, 2, 3, 4, 5],
+  allDay: true,
+  slotStepMinutes: 15,
+  weekdays: [0, 1, 2, 3, 4, 5, 6],
   times: ["09:00", "09:30", "10:00", "10:30", "14:00", "14:30", "15:00", "15:30"],
-  daysAhead: 10,
-  minNoticeHours: 12,
+  daysAhead: 60,
+  minNoticeHours: 1,
   durationMinutes: 15,
 };
 

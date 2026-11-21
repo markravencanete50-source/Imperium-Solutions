@@ -31,6 +31,11 @@ export type BookingEmailData = {
   bookingId: string;
   name: string;
   email: string;
+  company?: string;
+  industry?: string;
+  needs?: string[];
+  budget?: string;
+  notes?: string;
   slot: Date;
   visitorTimezone?: string;
   settingsTimezone: string;
@@ -197,6 +202,18 @@ export function resolveVisitorZone(visitorTimezone: string | undefined, fallback
   return z && isValidZone(z) ? z : fallback;
 }
 
+/** The answers from the booking form, as label and value rows. Empty answers are left out. */
+function bookingAnswerRows(d: BookingEmailData): [string, string][] {
+  const rows: [string, string][] = [
+    ["Company", d.company || ""],
+    ["Industry", d.industry || ""],
+    ["What they need", (d.needs || []).join(", ")],
+    ["Monthly budget", d.budget || ""],
+    ["Notes", d.notes || ""],
+  ];
+  return rows.filter(([, v]) => v);
+}
+
 /** Booking: the notification the team receives. */
 export function bookingTeamEmail(d: BookingEmailData): RenderedEmail {
   const when = formatWhen(d.slot, d.settingsTimezone);
@@ -211,6 +228,7 @@ export function bookingTeamEmail(d: BookingEmailData): RenderedEmail {
     ["Visitor time zone", visitorZone || (d.visitorTimezone ? `${d.visitorTimezone} (not recognised)` : "Not given")],
     ["In their time", theirTime],
     ["Length", `${d.durationMinutes} minutes`],
+    ...bookingAnswerRows(d),
   ];
   const shown = rows.filter(([, v]) => v);
   const html = layout(
@@ -288,27 +306,38 @@ export function bookingVisitorEmail(d: BookingEmailData, now: Date = new Date())
   const when = formatWhen(d.slot, zone);
   const hi = `Hi ${firstName(d.name)},`;
   const subject = `Your consultation is booked: ${when}`;
+  const answers = bookingAnswerRows(d);
+  const intro = `Your ${d.durationMinutes} minute consultation with ${site.name} is booked.`;
+  const next = "Our team will get back to you as soon as possible.";
+  const attach = "A calendar file is attached so you can add the call to your calendar. If you need a different time, reply to this email and we will move it.";
   const html = layout(
     "Your consultation is booked",
     p(escapeHtml(hi)) +
-      p(`Thank you for booking a ${d.durationMinutes} minute consultation with ${escapeHtml(site.name)}.`) +
+      p(escapeHtml(intro)) +
       field("When", when) +
+      field("Time zone", zone.replace(/_/g, " ")) +
       field("Length", `${d.durationMinutes} minutes`) +
-      p("We will use the call to understand your needs and recommend a solution. There is nothing to prepare, but a few notes on the work you want covered will help.") +
-      p("A calendar file is attached so you can add the call to your calendar. If you need a different time, reply to this email and we will move it."),
+      p(escapeHtml(next)) +
+      (answers.length
+        ? `<p style="margin:18px 0 10px;font-size:16px;font-weight:700;color:${INK}">What you told us</p>` +
+          answers.map(([k, v]) => field(k, v)).join("")
+        : "") +
+      p(escapeHtml(attach)),
     visitorFooter()
   );
   const text = [
     hi,
     "",
-    `Thank you for booking a ${d.durationMinutes} minute consultation with ${site.name}.`,
+    intro,
     "",
     `When: ${when}`,
+    `Time zone: ${zone.replace(/_/g, " ")}`,
     `Length: ${d.durationMinutes} minutes`,
     "",
-    "We will use the call to understand your needs and recommend a solution. There is nothing to prepare, but a few notes on the work you want covered will help.",
+    next,
     "",
-    "A calendar file is attached so you can add the call to your calendar. If you need a different time, reply to this email and we will move it.",
+    ...(answers.length ? ["What you told us", ...answers.map(([k, v]) => `${k}: ${v}`), ""] : []),
+    attach,
     "",
     site.legalName,
   ].join("\n");

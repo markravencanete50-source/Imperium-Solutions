@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { getDb } from "@/lib/firebase/client";
-import { COLLECTIONS, DEFAULT_BOOKING_SETTINGS, type BookingSettings } from "@/lib/crm";
+import { COLLECTIONS, DEFAULT_BOOKING_SETTINGS, MAX_DAYS_AHEAD, type BookingSettings } from "@/lib/crm";
 import { isValidZone } from "@/lib/time";
 import { saveRecord } from "@/components/admin/data";
 import { AField, PageTitle, Panel } from "@/components/admin/ui";
@@ -37,14 +37,16 @@ export default function SettingsPage() {
       .split(/[\s,]+/)
       .map((t) => t.trim())
       .filter(Boolean);
-    const bad = list.find((t) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(t));
+    const bad = s.allDay ? undefined : list.find((t) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(t));
     if (bad) return setMessage(`"${bad}" is not a time. Use 24 hour HH:MM, for example 09:30 or 14:00.`);
     if (!isValidZone(s.timezone)) return setMessage(`"${s.timezone}" is not a time zone. Use a name like America/New_York.`);
-    if (!s.weekdays.length || !list.length) return setMessage("Choose at least one day and one time.");
+    if (!s.allDay && (!s.weekdays.length || !list.length)) return setMessage("Choose at least one day and one time.");
     if (!(s.durationMinutes >= 5 && s.durationMinutes <= 120)) return setMessage("Call length must be between 5 and 120 minutes.");
-    if (!(s.daysAhead >= 1 && s.daysAhead <= 30)) return setMessage("Business days shown must be between 1 and 30.");
+    if (!(s.daysAhead >= 1 && s.daysAhead <= MAX_DAYS_AHEAD)) {
+      return setMessage(`${s.allDay ? "Days shown" : "Business days shown"} must be between 1 and ${MAX_DAYS_AHEAD}.`);
+    }
     try {
-      await saveRecord(COLLECTIONS.settings, "booking", { ...s, times: list.sort() });
+      await saveRecord(COLLECTIONS.settings, "booking", { ...s, times: list.length ? list.sort() : DEFAULT_BOOKING_SETTINGS.times });
       setMessage("Saved. The website shows the new times straight away.");
     } catch (err) {
       setMessage(`Could not save settings: ${err instanceof Error ? err.message : "something went wrong"}`);
@@ -68,20 +70,30 @@ export default function SettingsPage() {
           <AField label="Time zone the times below are written in">
             <input value={s.timezone} onChange={(e) => setS({ ...s, timezone: e.target.value.trim() })} disabled={!loaded} />
           </AField>
-          <fieldset className="days-pick">
+          <label className="toggle-row">
+            <input type="checkbox" checked={s.allDay} onChange={(e) => setS({ ...s, allDay: e.target.checked })} disabled={!loaded} />
+            <span>
+              <b>Open 24 hours</b>
+              <small>
+                Every {s.slotStepMinutes} minutes, every day of the week, in the time zone above. Turn this off to use the
+                days and start times below instead.
+              </small>
+            </span>
+          </label>
+          <fieldset className="days-pick" disabled={!loaded || s.allDay}>
             <legend>Days</legend>
             {DAYS.map((name, d) => (
               <label key={name}>
-                <input type="checkbox" checked={s.weekdays.includes(d)} onChange={() => toggleDay(d)} disabled={!loaded} /> {name}
+                <input type="checkbox" checked={s.weekdays.includes(d)} onChange={() => toggleDay(d)} /> {name}
               </label>
             ))}
           </fieldset>
           <AField label="Start times, 24 hour, separated by commas">
-            <textarea value={times} onChange={(e) => setTimes(e.target.value)} disabled={!loaded} />
+            <textarea value={times} onChange={(e) => setTimes(e.target.value)} disabled={!loaded || s.allDay} />
           </AField>
           <div className="form-row">
-            <AField label="Business days shown">
-              <input type="number" min="1" max="30" value={s.daysAhead} onChange={num("daysAhead")} disabled={!loaded} />
+            <AField label={s.allDay ? "Days shown" : "Business days shown"}>
+              <input type="number" min="1" max={MAX_DAYS_AHEAD} value={s.daysAhead} onChange={num("daysAhead")} disabled={!loaded} />
             </AField>
             <AField label="Minimum notice in hours">
               <input type="number" min="0" max="168" value={s.minNoticeHours} onChange={num("minNoticeHours")} disabled={!loaded} />

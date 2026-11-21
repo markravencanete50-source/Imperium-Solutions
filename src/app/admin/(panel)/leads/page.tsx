@@ -80,8 +80,8 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
             name: lead.company || lead.name,
             contactName: lead.name,
             email: lead.email,
-            industry: "",
-            services: [lead.side, lead.coverage].filter(Boolean).join(", "),
+            industry: lead.industry || "",
+            services: [lead.side, lead.coverage, ...(lead.needs || [])].filter(Boolean).join(", "),
             status: "onboarding",
             monthlyValue: 0,
             startDate: lead.startDate || "",
@@ -122,6 +122,9 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const details: [string, string | undefined][] = [
     ["Email", lead.email],
     ["Company", lead.company],
+    ["Industry", lead.industry],
+    ["Needs", lead.needs?.join(", ")],
+    ["Monthly budget", lead.budget],
     ["Type", label(lead.type)],
     ["Source", lead.source],
     ["Support needed", lead.side],
@@ -176,6 +179,12 @@ function LeadDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
         <>
           <h3>What they need</h3>
           <p className="prewrap">{lead.need}</p>
+        </>
+      ) : null}
+      {lead.notes ? (
+        <>
+          <h3>Notes from the visitor</h3>
+          <p className="prewrap">{lead.notes}</p>
         </>
       ) : null}
 

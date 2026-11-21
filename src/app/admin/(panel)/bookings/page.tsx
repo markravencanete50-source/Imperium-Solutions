@@ -22,6 +22,8 @@ function Table({ rows, onStatus }: { rows: Booking[]; onStatus: (b: Booking, sta
             <th>When (your time)</th>
             <th>Name</th>
             <th>Email</th>
+            <th>Company and industry</th>
+            <th>Needs and budget</th>
             <th>Their time zone</th>
             <th>Status</th>
           </tr>
@@ -35,6 +37,15 @@ function Table({ rows, onStatus }: { rows: Booking[]; onStatus: (b: Booking, sta
               <td>{b.name}</td>
               <td>
                 <a href={`mailto:${b.email}`}>{b.email}</a>
+              </td>
+              <td>
+                {b.company ? <b>{b.company}</b> : null}
+                {b.industry ? <span className="sub">{b.industry}</span> : null}
+              </td>
+              <td className="wrapcell">
+                {b.needs?.length ? <span>{b.needs.join(", ")}</span> : null}
+                {b.budget ? <span className="sub">Budget: {b.budget}</span> : null}
+                {b.notes ? <span className="sub prewrap">{b.notes}</span> : null}
               </td>
               <td>{(b.visitorTimezone || "").replace(/_/g, " ")}</td>
               <td>
