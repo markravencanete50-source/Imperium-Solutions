@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { CtaBand, PageHero, RelatedLinks } from "@/components/site/bits";
 import Timeline from "@/components/site/Timeline";
 import { Model, Needs } from "@/components/site/sections";
 
-export const metadata: Metadata = {
-  title: "How it works",
-  description: "How an Imperium engagement runs: what you define, what we manage, and the first 90 days.",
-  alternates: { canonical: "/how-it-works" },
-};
+export const metadata: Metadata = pageMetadata("/how-it-works");
 
 export default function Page() {
   return (
@@ -18,6 +16,7 @@ export default function Page() {
         image="var(--img-model)"
         imageAlt="Headphones and a laptop on a desk"
       />
+      <Breadcrumbs path="/how-it-works" />
       <Timeline />
       <Model />
       <Needs tone="raise" />

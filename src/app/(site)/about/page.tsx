@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { CtaBand, PageHero, RelatedLinks } from "@/components/site/bits";
 import Statement from "@/components/site/Statement";
 import { About } from "@/components/site/sections";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Imperium Solutions Inc. is a managed support company whose teams work from home on your hours.",
-  alternates: { canonical: "/about" },
-};
+export const metadata: Metadata = pageMetadata("/about");
 
 export default function Page() {
   return (
@@ -18,6 +16,7 @@ export default function Page() {
         image="var(--img-front)"
         imageAlt="A support headset with a microphone beside a laptop in a home office"
       />
+      <Breadcrumbs path="/about" />
       <About />
       <Statement />
       <RelatedLinks

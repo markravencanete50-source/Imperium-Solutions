@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { IconLine, PageHero, RelatedLinks, SectionHead, delay } from "@/components/site/bits";
 import { Icon } from "@/components/site/icons";
 import { site } from "@/lib/content";
 
-export const metadata: Metadata = {
-  title: "Careers",
-  description: "Work from home with Imperium Solutions in customer support, virtual assistance, and operations roles.",
-  alternates: { canonical: "/careers" },
-};
+export const metadata: Metadata = pageMetadata("/careers");
 
 export default function Page() {
   const apply = `mailto:${site.careersEmail}?subject=${encodeURIComponent("Application")}`;
@@ -20,6 +18,7 @@ export default function Page() {
         imageAlt="Hands typing on a laptop at a desk by a window"
         actions="none"
       />
+      <Breadcrumbs path="/careers" />
       <section className="band band--raise" aria-labelledby="apply-title">
         <div className="wrap">
           <SectionHead

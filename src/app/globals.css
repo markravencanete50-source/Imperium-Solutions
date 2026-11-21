@@ -610,3 +610,22 @@ html:not(.reduce) .ok-in{animation:okRise .75s var(--ease) var(--d,0s) both}
 .seg button{border-radius:6px}
 .cov-line{font-size:clamp(1.15rem,2.2vw,1.7rem)}
 
+/* SEO additions: footer link hub columns, breadcrumbs, home FAQ, related pages. */
+.foot-grid{grid-template-columns:minmax(0,4fr) minmax(0,3fr) minmax(0,3fr) minmax(0,5fr)}
+@media (max-width:860px){.foot-grid{grid-template-columns:minmax(0,1fr)}}
+.crumbs{background:var(--bg-2);border-bottom:1px solid var(--ink-line);font-size:14px;color:var(--on-ink-muted)}
+.crumbs ol{display:flex;flex-wrap:wrap;gap:4px 10px;padding-block:12px}
+.crumbs li + li::before{content:"/";margin-right:10px;color:var(--ink-line)}
+.crumbs a{text-underline-offset:3px}
+.crumbs [aria-current]{color:var(--on-ink);font-weight:600}
+.faq{max-width:46rem;border-top:1px solid var(--ink-line)}
+.faq details{border-bottom:1px solid var(--ink-line)}
+.faq summary{cursor:pointer;padding:20px 36px 20px 0;font-weight:700;font-size:1.1rem;line-height:1.35;list-style:none;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:1.5rem;font-weight:500;color:var(--on-ink-muted)}
+.faq details[open] summary::after{content:"-"}
+.faq p{padding-bottom:22px;color:var(--on-ink-muted);max-width:42rem}
+.related-list{display:grid;gap:12px;margin-top:20px}
+.related-list li{display:flex;flex-wrap:wrap;gap:4px 14px}
+.related-list a{font-weight:700}
+.related-list span{color:var(--on-ink-muted)}

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { PageHero } from "@/components/site/bits";
 import { site } from "@/lib/content";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How Imperium Solutions collects, uses, and protects the details you send through this website.",
-  alternates: { canonical: "/privacy" },
-};
+export const metadata: Metadata = pageMetadata("/privacy");
 
 // TODO: this is a starting template, not legal advice. Have it reviewed before launch,
 // and fill in the company address and the date it takes effect.
@@ -24,6 +22,7 @@ export default function Page() {
   return (
     <>
       <PageHero title="Privacy Policy" lede="What we collect through this website, why, and the choices you have." actions="none" />
+      <Breadcrumbs path="/privacy" />
       <section className="band legal-page">
         <div className="wrap legal-grid">
           <nav className="toc" aria-label="On this page">

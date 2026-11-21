@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { nav, photoCredits, site } from "@/lib/content";
+import { photoCredits, site } from "@/lib/content";
 
 export default function Footer() {
   return (
@@ -13,14 +13,35 @@ export default function Footer() {
             </Link>
             <p>{site.tagline}</p>
           </div>
-          <div>
-            <h3>Site</h3>
+          <nav aria-label="Services and information">
+            <h3>Services and information</h3>
             <ul className="plain">
-              {nav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href}>{item.label}</Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/services">Services</Link>
+              </li>
+              <li>
+                <Link href="/how-it-works">How it works</Link>
+              </li>
+              <li>
+                <Link href="/results">Results</Link>
+              </li>
+              <li>
+                <Link href="/industries">Industries</Link>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Company">
+            <h3>Company</h3>
+            <ul className="plain">
+              <li>
+                <Link href="/">Home</Link>
+              </li>
+              <li>
+                <Link href="/about">About</Link>
+              </li>
+              <li>
+                <Link href="/contact">Contact and consultations</Link>
+              </li>
               <li>
                 <Link href="/careers">Careers</Link>
               </li>
@@ -33,7 +54,7 @@ export default function Footer() {
                 </a>
               </li>
             </ul>
-          </div>
+          </nav>
           <div>
             <h3>Photo credits</h3>
             <ul className="plain credits">

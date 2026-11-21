@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { CtaBand, PageHero, RelatedLinks } from "@/components/site/bits";
 import Industries from "@/components/site/Industries";
 
-export const metadata: Metadata = {
-  title: "Industries",
-  description: "Imperium accepts every industry, including real estate, healthcare, property management, ecommerce, fintech, education, and software.",
-  alternates: { canonical: "/industries" },
-};
+export const metadata: Metadata = pageMetadata("/industries");
 
 export default function Page() {
   return (
@@ -17,6 +15,7 @@ export default function Page() {
         image="var(--img-h-realestate)"
         imageAlt="A large house at dusk with lights on the porch"
       />
+      <Breadcrumbs path="/industries" />
       <Industries />
       <RelatedLinks
         items={[

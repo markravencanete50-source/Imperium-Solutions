@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { CtaBand, PageHero, RelatedLinks } from "@/components/site/bits";
 import { Results, StatStrip } from "@/components/site/sections";
 
-export const metadata: Metadata = {
-  title: "Results",
-  description: "Documented Imperium engagements and hours from our Upwork track record.",
-  alternates: { canonical: "/results" },
-};
+export const metadata: Metadata = pageMetadata("/results");
 
 export default function Page() {
   return (
@@ -17,6 +15,7 @@ export default function Page() {
         image="var(--img-h-saas)"
         imageAlt="Analytics dashboard with charts on a dark screen"
       />
+      <Breadcrumbs path="/results" />
       <section className="band band--raise statband" aria-label="Upwork track record">
         <div className="wrap">
           <StatStrip />
