@@ -64,3 +64,11 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - **Testing the live domain with curl.** Add `--ssl-no-revoke`, because the Windows certificate revocation check fails on this network.
 - **Admin deletes.** These use an in-page "Yes, delete" button, not `confirm()`, so browser automation is safe.
 - **Writing rules.** Never print the service account private key into chat. Write no em dashes, emojis or decorative symbols in user-facing copy.
+
+## 2026-11-21 update
+
+- Resend is LIVE. `RESEND_API_KEY` is set in Vercel (Production). Domain imperiumsolutionshq.com is verified in Resend (us-east-1). DNS added in GoDaddy for hq: TXT `resend._domainkey`, CNAME `send` and `rsend` to `*.forge.rmta.net`. Google Workspace MX/SPF/DMARC untouched. Resend "receiving" is deliberately OFF (it would replace Tom's Gmail MX).
+- Live test passed: a test lead sent both the team notification (tom@) and the visitor confirmation; the test lead was deleted.
+- Contact and careers emails are `tom@imperiumsolutionshq.com` (Vercel env).
+- Do NOT import `firebase-admin/auth` in app code. It loads `jose` via require() and crashes every route on the Vercel runtime (this took the live API down for about 6 minutes on 2026-11-21). Admin ID tokens are verified with `src/lib/server/verifyAdmin.ts` (Identity Toolkit `accounts:lookup`). Scripts under `scripts/` may still use it locally.
+- Not yet clicked through in the browser: the Email box in the lead drawer on production.
