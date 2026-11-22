@@ -8,6 +8,7 @@ export const COLLECTIONS = {
   deals: "deals",
   payments: "payments",
   settings: "settings",
+  auditLog: "auditLog",
 } as const;
 
 export const LEAD_STATUSES = ["new", "contacted", "qualified", "proposal", "won", "lost"] as const;

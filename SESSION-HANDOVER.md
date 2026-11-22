@@ -1,6 +1,6 @@
 # Session handover
 
-Last updated: 2026-11-21. Read this first, then CLAUDE.md and README.md.
+Last updated: 2026-11-22. Read this first, then CLAUDE.md and README.md.
 
 ## Where things stand
 
@@ -105,3 +105,19 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - New `src/components/site/graphics.tsx`: six small SVG motion graphics for the service tiles. CSS lives under "Motion graphics" at the end of `globals.css`. Loops run only after `[data-in]` and never under `html.reduce`; the still frame shows the finished state.
 - Services is now a deck of six capability tiles (front office and back office) that open modal cards. The operating model (`Model`) is an animated flow with three stage tiles that open modals. Results and Industries open modals on the home page only (`compact`).
 - Typecheck, lint and build pass. Not merged to main, so not live. Merge to main to deploy.
+
+## 2026-11-22 Team management (admin users) (NOT committed or deployed)
+
+Admin, Team (`/admin/team`, in the nav) lists every Firebase Auth user and lets an admin invite, resend an invite, block, unblock, revoke, restore, and send a password reset. Latest 20 audit rows show on the same page. Tested end to end on the emulators only (27 browser checks plus API checks). Not yet clicked through on production.
+
+- **No `firebase-admin/auth`.** `src/lib/server/authAdmin.ts` calls the Identity Toolkit REST admin API directly. It signs an RS256 service account JWT with `node:crypto`, exchanges it at `oauth2.googleapis.com/token`, and caches the access token in module scope (refreshed 5 minutes before expiry). With `FIREBASE_AUTH_EMULATOR_HOST` set it skips the token and sends `Authorization: Bearer owner`. Endpoints used: `projects/{p}/accounts` (create), `accounts:update`, `accounts:batchGet`, `accounts:lookup`, `accounts:sendOobCode` (PASSWORD_RESET with `returnOobLink`). Errors map to `AuthAdminError` codes (EMAIL_EXISTS, USER_NOT_FOUND, INVALID_EMAIL, INVALID_CONTINUE_URI, PERMISSION_DENIED, TOKEN_ERROR, NETWORK_ERROR, NOT_CONFIGURED).
+- **Routes** (all need `Authorization: Bearer <ID token>` with the admin claim, zod validated): `GET /api/admin/team`, `POST /api/admin/team/invite` ({name,email,restore?}), `POST /api/admin/team/action` ({uid,action}, action one of block, unblock, revoke, restore, reset_password, resend_invite). Shared guard and audit helpers: `src/lib/server/adminRoute.ts`. Status and safety rules (pure, shared with the page): `src/lib/team.ts`. `verifyAdminToken` now also returns the caller `uid`.
+- **Status** is derived: disabled gives Blocked, no admin claim gives Revoked, admin claim with no password set and no real sign in gives Invited, otherwise Active.
+- **Safety:** an admin cannot block or revoke themselves (`cannot_modify_self`), and no action may leave zero admins who hold the claim and are not disabled (`last_admin`). Because the caller is always such an admin, `last_admin` cannot be hit through the UI, it is a guard for races. It is unit checked only.
+- **Email:** invite and reset go through Resend (`adminInviteEmail`, `adminResetEmail` in `emailTemplates.ts`). If Resend is not configured or fails, the API returns the password link in `link` and the Team page shows it with a Copy button so it can be sent by hand. The link is never returned when the email was sent. The login URL in the email is `${NEXT_PUBLIC_SITE_URL}/admin/login`. Firebase password links expire after a limited time (believed to be about an hour, unverified), so use Resend invite if one expires.
+- **Audit log:** Firestore `auditLog` (`{action,targetEmail,targetUid,by,at}`), written server side only. `firestore.rules` already allows admin read and write on every path through its wildcard, so no rules change and no redeploy is needed. `auditLog` is in `COLLECTIONS`.
+- **Residual window for blocked or revoked users.** Block and revoke set `validSince` to now, which kills their refresh tokens and makes every server API route reject their old tokens immediately (verified). Firestore rules only read the `admin` claim inside the ID token, and an ID token stays valid for up to one hour, so a blocked or revoked user can still read Firestore directly until the token expires or is refreshed. Mitigation: `src/components/admin/auth.tsx` calls `getIdToken(true)` when a user signs in, every 5 minutes, and whenever the tab becomes visible. If Firebase rejects the refresh (user-disabled, user-token-expired, user-not-found) the app signs out and the login page shows the reason (blocked message, or "You no longer have access, or your session has ended..."). If the refresh succeeds without the admin claim the shell shows "You no longer have access". So the worst case is about 5 minutes for an open tab, and up to an hour for a tab that is asleep and still has direct Firestore access.
+- **Emulator caveat:** the Auth emulator does not reject a refresh after `validSince` changes, so on the emulator a revoked user is removed through the missing claim path (shell notice), not the refresh failure path. Production should use the refresh failure path. Not verifiable without a real project.
+- Login page now maps `auth/user-disabled` to "This account has been blocked. Contact your administrator." Settings, Admin access now points to the Team page.
+- The first admin still comes from `npm run admin:create`. Existing admins show as Active (they have a password).
+

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
 import { getDb } from "@/lib/firebase/client";
 import { COLLECTIONS, DEFAULT_BOOKING_SETTINGS, MAX_DAYS_AHEAD, type BookingSettings } from "@/lib/crm";
@@ -113,11 +114,8 @@ export default function SettingsPage() {
 
       <Panel title="Admin access">
         <p>
-          Admins are Firebase users that carry the admin claim. To add one, run this from the project folder with the
-          service account variables set:
+          Invite people, block them, or remove their access on the <Link href="/admin/team">Team</Link> page.
         </p>
-        <pre className="code">npm run admin:create -- person@company.com a-strong-password</pre>
-        <p>To remove access, delete the user in the Firebase console under Authentication.</p>
       </Panel>
     </>
   );

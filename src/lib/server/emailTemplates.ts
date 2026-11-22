@@ -364,3 +364,76 @@ export function manualEmail(subject: string, body: string): RenderedEmail {
   const text = `${clean}\n\n${site.name}`;
   return { subject: oneLine(subject), html, text };
 }
+
+export type AdminLinkEmailData = {
+  name: string;
+  link: string;
+  loginUrl: string;
+};
+
+/** Invitation to the admin: a button that opens the Firebase page where the person sets a password. */
+export function adminInviteEmail(d: AdminLinkEmailData): RenderedEmail {
+  const subject = "You have been invited to the Imperium Solutions admin";
+  const hi = `Hi ${firstName(d.name)},`;
+  const html = layout(
+    "You have been invited",
+    p(escapeHtml(hi)) +
+      p(`You now have access to the ${escapeHtml(site.name)} admin, where we manage leads, bookings and clients.`) +
+      p("Choose a password to finish setting up your account.") +
+      button(d.link, "Set your password") +
+      p(
+        `This link works for a limited time and can be used once. If it stops working, ask your administrator to send you a new invite.`
+      ) +
+      p(
+        `After you set a password, sign in at <a href="${escapeHtml(d.loginUrl)}" style="color:${INK}">${escapeHtml(d.loginUrl)}</a>.`
+      ),
+    `${escapeHtml(site.legalName)}. If you were not expecting this invitation, you can ignore this email.`
+  );
+  const text = [
+    hi,
+    "",
+    `You now have access to the ${site.name} admin, where we manage leads, bookings and clients.`,
+    "",
+    "Choose a password to finish setting up your account:",
+    d.link,
+    "",
+    "This link works for a limited time and can be used once. If it stops working, ask your administrator to send you a new invite.",
+    "",
+    `After you set a password, sign in at ${d.loginUrl}`,
+    "",
+    site.legalName,
+    "If you were not expecting this invitation, you can ignore this email.",
+  ].join("\n");
+  return { subject, html, text };
+}
+
+/** Password reset for an admin account, sent when another admin asks for it. */
+export function adminResetEmail(d: AdminLinkEmailData): RenderedEmail {
+  const subject = "Reset your Imperium admin password";
+  const hi = `Hi ${firstName(d.name)},`;
+  const html = layout(
+    "Reset your password",
+    p(escapeHtml(hi)) +
+      p(`An administrator asked for a password reset for your ${escapeHtml(site.name)} admin account.`) +
+      button(d.link, "Choose a new password") +
+      p("This link works for a limited time and can be used once. If it stops working, ask your administrator to send a new one.") +
+      p(`Then sign in at <a href="${escapeHtml(d.loginUrl)}" style="color:${INK}">${escapeHtml(d.loginUrl)}</a>.`),
+    `${escapeHtml(site.legalName)}. If you did not expect this email, you can ignore it. Your password does not change until you use the link.`
+  );
+  const text = [
+    hi,
+    "",
+    `An administrator asked for a password reset for your ${site.name} admin account.`,
+    "",
+    "Choose a new password:",
+    d.link,
+    "",
+    "This link works for a limited time and can be used once. If it stops working, ask your administrator to send a new one.",
+    "",
+    `Then sign in at ${d.loginUrl}`,
+    "",
+    site.legalName,
+    "If you did not expect this email, you can ignore it. Your password does not change until you use the link.",
+  ].join("\n");
+  return { subject, html, text };
+}

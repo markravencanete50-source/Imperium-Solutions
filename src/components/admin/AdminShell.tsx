@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/clients", label: "Clients" },
   { href: "/admin/sales", label: "Sales" },
   { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/team", label: "Team" },
   { href: "/admin/settings", label: "Settings" },
 ];
 
@@ -54,10 +55,10 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }
   if (!isAdmin) {
     return (
-      <Notice title="This account is not an admin">
+      <Notice title="You no longer have access">
         <p>
-          {user.email} is signed in but does not have admin access. Ask the site owner to run the create admin script
-          for this email, then sign in again.
+          {user.email} is signed in but does not have admin access. If you should have access, ask your administrator to
+          restore it, then sign in again.
         </p>
         <button className="abtn" type="button" onClick={() => logOut()}>
           Sign out
