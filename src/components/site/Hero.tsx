@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
-import { industries } from "@/lib/content";
+import { industries as allIndustries } from "@/lib/content";
 import { Icon } from "./icons";
 import { SwapText } from "./motion";
+
+// Only industries with work on record rotate in the hero. The full list lives on /industries.
+const industries = allIndustries.filter((i) => i.tag === "Delivered");
 
 const DURATION = 3800; // time each industry stays on screen
 const WIPE = 1200; // matches the clip-path transition in globals.css

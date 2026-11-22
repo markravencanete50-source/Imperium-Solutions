@@ -12,7 +12,8 @@ export type SeoPath =
   | "/about"
   | "/contact"
   | "/careers"
-  | "/privacy";
+  | "/privacy"
+  | "/credits";
 
 export type SeoPage = {
   path: SeoPath;
@@ -127,9 +128,19 @@ export const seoPages: Record<SeoPath, SeoPage> = {
     changeFrequency: "yearly",
     priority: 0.3,
   },
+  "/credits": {
+    path: "/credits",
+    title: "Photo Credits",
+    crumb: "Photo credits",
+    description:
+      "Credits for the photographs used on the Imperium Solutions website, with the name of each photographer and a link to the original image on Unsplash or Pexels.",
+    schemaType: "WebPage",
+    changeFrequency: "yearly",
+    priority: 0.1,
+  },
 };
 
 export const seoPaths = Object.keys(seoPages) as SeoPath[];
 
 /** Fixed date for sitemap lastModified and schema dateModified. Update when page content changes. */
-export const CONTENT_LAST_MODIFIED = "2026-11-21";
+export const CONTENT_LAST_MODIFIED = "2026-11-22";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { photoCredits, site } from "@/lib/content";
+import { site } from "@/lib/content";
 
 export default function Footer() {
   return (
@@ -52,6 +52,9 @@ export default function Footer() {
                 <Link href="/privacy">Privacy Policy</Link>
               </li>
               <li>
+                <Link href="/credits">Photo credits</Link>
+              </li>
+              <li>
                 <a href={site.upworkUrl} target="_blank" rel="noopener">
                   Upwork profile
                 </a>
@@ -59,16 +62,17 @@ export default function Footer() {
             </ul>
           </nav>
           <div>
-            <h3>Photo credits</h3>
-            <ul className="plain credits">
-              {photoCredits.map((c) => (
-                <li key={c.label}>
-                  <a href={c.href} target="_blank" rel="noopener">
-                    {c.label}
-                  </a>
-                  , {c.by}
-                </li>
-              ))}
+            <h3>Contact</h3>
+            <ul className="plain">
+              <li>
+                <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>
+              </li>
+              <li>
+                <Link href="/contact">Book a 15 minute consultation</Link>
+              </li>
+              <li>
+                <Link href="/contact#estimate">Request an estimate</Link>
+              </li>
             </ul>
           </div>
         </div>

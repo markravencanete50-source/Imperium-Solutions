@@ -23,7 +23,7 @@ export default function Page() {
           <SectionHead
             id="reviews-title"
             title="Client reviews"
-            lede="Every written review on our team's completed Upwork contracts. Client names stay private on Upwork."
+            lede="Written reviews from our team's completed Upwork contracts. Client names stay private on Upwork."
           />
           <ul className="plain quotes">
             {testimonials.map((t, i) => (

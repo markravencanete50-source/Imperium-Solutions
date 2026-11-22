@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { site, stats } from "@/lib/content";
 import { IconLine, Photo, Rise, SectionHead, delay } from "./bits";
+import DetailCard from "./DetailCard";
+import { Graphic, type GraphicName } from "./graphics";
 import { Icon, type IconName } from "./icons";
 import { CountUp } from "./motion";
 
@@ -48,24 +49,28 @@ const youDefine: { icon: IconName; text: string }[] = [
   { icon: "user", text: "One point of contact" },
 ];
 
-const weManage: { title: string; icon: IconName; items: string[] }[] = [
+const weManage: { title: string; icon: IconName; line: string; items: string[] }[] = [
   {
     title: "Setup",
     icon: "flag",
+    line: "We recruit, train, and prepare the team before launch.",
     items: ["Recruitment coordination", "Onboarding and training", "Workflows and KPIs", "Launch preparation"],
   },
   {
     title: "Daily operations",
     icon: "users",
+    line: "We schedule, supervise, and coach the team every day.",
     items: ["Scheduling and supervision", "Quality assurance", "Coaching and escalations", "Staffing coordination"],
   },
   {
     title: "Reporting",
     icon: "chart",
+    line: "You get weekly updates and a monthly review.",
     items: ["Weekly performance updates", "KPI tracking", "Monthly operational reviews"],
   },
 ];
 
+/** You define the work, Imperium runs it. A pulse travels from your side into the three stages we manage. */
 export function Model() {
   return (
     <section className="band" id="model" aria-labelledby="model-title">
@@ -78,32 +83,54 @@ export function Model() {
         <div className="model">
           <div className="model-you tile" data-reveal="">
             <h3>You define</h3>
-            <ul className="plain il-list">
+            <ul className="plain model-chips">
               {youDefine.map((y) => (
-                <IconLine key={y.text} icon={y.icon}>
+                <li key={y.text}>
+                  <Icon name={y.icon} size={20} />
                   {y.text}
-                </IconLine>
+                </li>
               ))}
             </ul>
           </div>
-          <div className="model-arrow" aria-hidden="true">
+          <div className="model-arrow" aria-hidden="true" data-reveal="">
+            <span className="model-pulse" />
             <Icon name="arrow" size={28} />
           </div>
-          <div className="model-us tile tile--hi" data-reveal="" style={delay(120)}>
+          <div className="model-us" data-reveal="" style={delay(120)}>
             <h3>Imperium manages</h3>
             <div className="model-groups">
-              {weManage.map((g) => (
-                <div key={g.title}>
-                  <h4>
-                    <Icon name={g.icon} size={20} />
-                    {g.title}
-                  </h4>
+              {weManage.map((g, i) => (
+                <DetailCard
+                  key={g.title}
+                  reveal={false}
+                  className="stage tile--hi"
+                  eyebrow={`Imperium manages, step ${i + 1} of 3`}
+                  title={g.title}
+                  more="See the tasks"
+                  tile={
+                    <>
+                      <span className="stage-n">{i + 1}</span>
+                      <Icon name={g.icon} size={28} />
+                      <h4>{g.title}</h4>
+                      <p>{g.line}</p>
+                    </>
+                  }
+                >
+                  <p className="modal-lede">{g.line}</p>
                   <ul className="plain ticks">
                     {g.items.map((it) => (
                       <li key={it}>{it}</li>
                     ))}
                   </ul>
-                </div>
+                  <div className="actions">
+                    <Link className="btn btn--amber" href="/contact">
+                      Book a 15 minute consultation
+                    </Link>
+                    <Link className="btn btn--ghost" href="/how-it-works">
+                      See the 90 day plan
+                    </Link>
+                  </div>
+                </DetailCard>
               ))}
             </div>
           </div>
@@ -113,121 +140,155 @@ export function Model() {
   );
 }
 
-type Group = { title: string; items: { icon: IconName; text: string }[] };
-
-const front: Group[] = [
-  {
-    title: "Customer support",
-    items: [
-      { icon: "chat", text: "Live chat, email, and voice support" },
-      { icon: "users", text: "Inquiries, onboarding, and account help" },
-      { icon: "ticket", text: "Ticket management, follow ups, and escalations" },
-    ],
-  },
-  {
-    title: "Coverage",
-    items: [
-      { icon: "clock", text: "Business hours" },
-      { icon: "calendar", text: "Extended hours" },
-      { icon: "globe", text: "Round the clock" },
-    ],
-  },
-];
-
-const back: Group[] = [
-  {
-    title: "Virtual assistance and administration",
-    items: [
-      { icon: "database", text: "CRM management and data organization" },
-      { icon: "calendar", text: "Inbox, calendar, and appointments" },
-      { icon: "trend", text: "Sales administration and lead follow ups" },
-      { icon: "briefcase", text: "Executive assistance and admin tasks" },
-    ],
-  },
-  {
-    title: "Project management and operations",
-    items: [
-      { icon: "clipboard", text: "Project tracking and team coordination" },
-      { icon: "workflow", text: "Digital operations and workflow management" },
-      { icon: "file", text: "Process documentation and reporting" },
-    ],
-  },
-];
-
-function ServiceTile({
-  title,
-  tag,
-  image,
-  alt,
-  groups,
-  delayMs,
-  footer,
-}: {
+type Capability = {
+  key: string;
+  graphic: GraphicName;
   title: string;
-  tag: string;
-  image: string;
-  alt: string;
-  groups: Group[];
-  delayMs?: number;
-  footer?: ReactNode;
-}) {
-  return (
-    <article className="svc tile">
-      <Photo image={image} alt={alt} delayMs={delayMs} />
-      <div className="svc-body">
-        <h3 data-reveal="">{title}</h3>
-        <p className="tag" data-reveal="">
-          {tag}
-        </p>
-        {groups.map((g) => (
-          <div className="svc-group" key={g.title} data-reveal="">
-            <h4>{g.title}</h4>
-            <ul className="plain il-list il-list--two">
-              {g.items.map((it) => (
-                <IconLine key={it.text} icon={it.icon}>
-                  {it.text}
-                </IconLine>
-              ))}
-            </ul>
-          </div>
-        ))}
-        {footer}
-      </div>
-    </article>
-  );
-}
+  line: string;
+  items: { icon: IconName; text: string }[];
+  link?: { href: string; label: string };
+};
 
+const sides: { title: string; tag: string; caps: Capability[] }[] = [
+  {
+    title: "Front office",
+    tag: "Customer support that answers when your customers ask.",
+    caps: [
+      {
+        key: "chat",
+        graphic: "chat",
+        title: "Live chat, email, and voice",
+        line: "Your customers get a clear answer on the channel they chose.",
+        items: [
+          { icon: "chat", text: "Live chat, email, and voice support" },
+          { icon: "users", text: "Inquiries, onboarding, and account help" },
+        ],
+      },
+      {
+        key: "tickets",
+        graphic: "tickets",
+        title: "Tickets and escalations",
+        line: "Every request is logged, followed up, and closed or escalated.",
+        items: [{ icon: "ticket", text: "Ticket management, follow ups, and escalations" }],
+      },
+      {
+        key: "coverage",
+        graphic: "coverage",
+        title: "Coverage on your hours",
+        line: "Business hours, extended hours, or round the clock, in your time zone.",
+        items: [
+          { icon: "clock", text: "Business hours" },
+          { icon: "calendar", text: "Extended hours" },
+          { icon: "globe", text: "Round the clock" },
+        ],
+        link: { href: "/services#coverage", label: "See how coverage hours work" },
+      },
+    ],
+  },
+  {
+    title: "Back office",
+    tag: "The recurring work that keeps the business moving.",
+    caps: [
+      {
+        key: "crm",
+        graphic: "crm",
+        title: "CRM and sales admin",
+        line: "Clean records, and leads that get followed up on time.",
+        items: [
+          { icon: "database", text: "CRM management and data organization" },
+          { icon: "trend", text: "Sales administration and lead follow ups" },
+        ],
+      },
+      {
+        key: "inbox",
+        graphic: "inbox",
+        title: "Inbox, calendar, and admin",
+        line: "Inboxes under control, meetings booked, and admin tasks done.",
+        items: [
+          { icon: "calendar", text: "Inbox, calendar, and appointments" },
+          { icon: "briefcase", text: "Executive assistance and admin tasks" },
+        ],
+      },
+      {
+        key: "flow",
+        graphic: "flow",
+        title: "Projects and operations",
+        line: "Projects tracked, workflows documented, and reports on time.",
+        items: [
+          { icon: "clipboard", text: "Project tracking and team coordination" },
+          { icon: "workflow", text: "Digital operations and workflow management" },
+          { icon: "file", text: "Process documentation and reporting" },
+        ],
+      },
+    ],
+  },
+];
+
+const included = ["Recruitment and training", "Scheduling and supervision", "Quality assurance", "Weekly performance updates"];
+
+/** The two service lines as a deck of tiles. Each tile animates what the work looks like and opens a card with the detail. */
 export function Services() {
   return (
     <section className="band band--raise" id="services" aria-labelledby="services-title">
       <div className="wrap">
         <SectionHead
           id="services-title"
-          title="One managed team for both sides of your business"
-          lede="Start with the side that hurts most. Add the other when you are ready."
+          title="What we take off your plate"
+          lede="Start with the side that hurts most. Add the other when you are ready. Open any tile to see what is included."
         />
-        <div className="split">
-          <ServiceTile
-            title="Front office"
-            tag="Customer support that answers when your customers ask."
-            image="var(--img-front)"
-            alt="A support headset with a microphone beside a laptop in a home office"
-            groups={front}
-            footer={
-              <Link className="textlink more" href="/services#coverage" data-reveal="">
-                See how coverage hours work
-              </Link>
-            }
-          />
-          <ServiceTile
-            title="Back office"
-            tag="The recurring work that keeps the business moving."
-            image="var(--img-back)"
-            alt="Hands typing on a laptop at a desk by a window"
-            groups={back}
-            delayMs={150}
-          />
-        </div>
+        {sides.map((side) => (
+          <div className="deck" key={side.title}>
+            <div className="deck-head" data-reveal="">
+              <h3>{side.title}</h3>
+              <p>{side.tag}</p>
+            </div>
+            <div className="deck-grid">
+              {side.caps.map((c, i) => (
+                <DetailCard
+                  key={c.key}
+                  className="cap"
+                  style={delay(i * 90)}
+                  eyebrow={side.title}
+                  title={c.title}
+                  tile={
+                    <>
+                      <Graphic name={c.graphic} />
+                      <h4 className="cap-title">{c.title}</h4>
+                      <p className="cap-line">{c.line}</p>
+                    </>
+                  }
+                >
+                  <p className="modal-lede">{c.line}</p>
+                  <ul className="plain il-list">
+                    {c.items.map((it) => (
+                      <IconLine key={it.text} icon={it.icon}>
+                        {it.text}
+                      </IconLine>
+                    ))}
+                  </ul>
+                  <div className="modal-panel">
+                    <h3>Every team comes with</h3>
+                    <ul className="plain ticks ticks--two">
+                      {included.map((x) => (
+                        <li key={x}>{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="actions">
+                    <Link className="btn btn--amber" href="/contact">
+                      Book a 15 minute consultation
+                    </Link>
+                    {c.link ? (
+                      <Link className="btn btn--ghost" href={c.link.href}>
+                        {c.link.label}
+                      </Link>
+                    ) : null}
+                  </div>
+                </DetailCard>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -270,22 +331,65 @@ export function Results({ compact = false }: { compact?: boolean }) {
           lede="Documented on our Upwork profile, where each client rates the work."
         />
         <div className="res-top">
-          {results.map((r, i) => (
-            <article className="res tile" key={r.title} data-reveal="" style={delay(i * 120)}>
-              <div className="res-n">
-                <CountUp value={r.value} suffix={r.suffix} />
-              </div>
-              <div className="res-u">{r.unit}</div>
-              <h3>{r.title}</h3>
-              {compact ? null : <p>{r.text}</p>}
-              {r.rating ? (
-                <p className="res-r">
-                  <Icon name="star" size={18} />
-                  {r.rating}
+          {results.map((r, i) => {
+            const face = (
+              <>
+                <div className="res-n">
+                  <CountUp value={r.value} suffix={r.suffix} />
+                </div>
+                <div className="res-u">{r.unit}</div>
+                <h3>{r.title}</h3>
+                {compact ? null : <p>{r.text}</p>}
+                {r.rating ? (
+                  <p className="res-r">
+                    <Icon name="star" size={18} />
+                    {r.rating}
+                  </p>
+                ) : null}
+              </>
+            );
+            if (!compact) {
+              return (
+                <article className="res tile" key={r.title} data-reveal="" style={delay(i * 120)}>
+                  {face}
+                </article>
+              );
+            }
+            return (
+              <DetailCard
+                key={r.title}
+                className="res"
+                style={delay(i * 120)}
+                eyebrow={`${r.value.toLocaleString("en-US")}${r.suffix} ${r.unit}`}
+                title={r.title}
+                more="Read the engagement"
+                tile={face}
+              >
+                <p className="modal-lede">{r.text}</p>
+                {r.rating ? (
+                  <p className="res-r">
+                    <Icon name="star" size={18} />
+                    {r.rating}
+                  </p>
+                ) : null}
+                <p className="modal-note">
+                  Hours and ratings are recorded on our{" "}
+                  <a className="textlink" href={site.upworkUrl} target="_blank" rel="noopener">
+                    Upwork profile
+                  </a>
+                  .
                 </p>
-              ) : null}
-            </article>
-          ))}
+                <div className="actions">
+                  <Link className="btn btn--amber" href="/contact">
+                    Book a 15 minute consultation
+                  </Link>
+                  <Link className="btn btn--ghost" href="/results">
+                    See all results
+                  </Link>
+                </div>
+              </DetailCard>
+            );
+          })}
         </div>
         <ul className="plain res-more">
           <li className="tile" data-reveal="">

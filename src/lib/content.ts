@@ -170,6 +170,7 @@ export const bookingBudgetOptions = [
 
 // Client reviews, quoted word for word from completed Upwork contracts of Imperium team members.
 // Only reviews with written feedback are listed. Do not edit the quotes. Last checked 2026-11-21.
+// 2026-11-22: the October 2025 farewell note was removed on purpose (it read as a contract ending).
 export type Testimonial = {
   quote: string;
   role: string; // the Upwork job title
@@ -178,12 +179,6 @@ export type Testimonial = {
 };
 
 export const testimonials: Testimonial[] = [
-  {
-    quote: "Thank you for your contribution to the team! We wish Tom all the best with his future endeavours!",
-    role: "Executive Virtual Assistant and Lead Sourcing",
-    period: "October 2025",
-    rating: "5.0",
-  },
   {
     quote: "We look forward to working with Tom in the future!",
     role: "Customer Success Manager, AI SaaS company",

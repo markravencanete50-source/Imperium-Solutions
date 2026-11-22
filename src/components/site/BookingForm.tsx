@@ -58,6 +58,27 @@ function monthDays(month: string): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
+const DETAIL_KEYS = ["name", "email", "industry", "needs", "budget"];
+
+const FIELD_IDS: Record<string, string> = {
+  name: "book-name",
+  email: "book-email",
+  industry: "book-industry",
+  needs: "book-need-0",
+  budget: "book-budget",
+  slot: "book-date",
+};
+
+/** Focus a field (by error key) or a step heading (by element id) and bring it into view. */
+function focusTarget(target: string) {
+  const fieldId = FIELD_IDS[target];
+  const el = document.getElementById(fieldId || target);
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  if (fieldId) el.scrollIntoView({ block: "center", behavior: "auto" });
+  else el.closest("form")?.scrollIntoView({ block: "start", behavior: "auto" });
+}
+
 const FIELD_NAMES: Record<string, string> = {
   name: "Enter your name.",
   email: "Enter an email address like name@company.com.",
@@ -90,6 +111,7 @@ export default function BookingForm() {
   const [dayError, setDayError] = useState(false);
   const [slot, setSlot] = useState("");
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -98,6 +120,8 @@ export default function BookingForm() {
   const initZone = useRef("");
   const dayToken = useRef(0);
   const gridRef = useRef<HTMLDivElement>(null);
+  // What to focus after the step changes: a field id, or a step heading.
+  const pendingFocus = useRef("");
 
   const month = monthState || (cal ? monthOf(cal.today) : "");
   const monthLoaded = Boolean(cal && cal.months.includes(month));
@@ -218,28 +242,47 @@ export default function BookingForm() {
     };
   }
 
-  function focusField(key: string) {
-    const id = { name: "book-name", email: "book-email", industry: "book-industry", needs: "book-need-0", budget: "book-budget", slot: "book-date" }[key];
-    const el = id ? document.getElementById(id) : null;
-    if (el) {
-      el.focus({ preventScroll: true });
-      el.scrollIntoView({ block: "center", behavior: "auto" });
-    }
-  }
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  function detailErrors() {
     const next: Record<string, string> = {};
     if (!name.trim()) next.name = FIELD_NAMES.name;
     if (!validEmail(email)) next.email = FIELD_NAMES.email;
     if (!industry) next.industry = FIELD_NAMES.industry;
     if (!needs.length) next.needs = FIELD_NAMES.needs;
     if (!budget) next.budget = FIELD_NAMES.budget;
+    return next;
+  }
+
+  // Move focus once the new step has rendered.
+  useEffect(() => {
+    const target = pendingFocus.current;
+    pendingFocus.current = "";
+    if (target) focusTarget(target);
+  }, [step]);
+
+  function goToStep(next: 1 | 2, focus: string) {
+    if (next === step) return focusTarget(focus);
+    pendingFocus.current = focus;
+    setStep(next);
+  }
+
+  function continueToTime() {
+    const next = detailErrors();
+    setErrors(next);
+    setStatus("");
+    const firstKey = DETAIL_KEYS.find((k) => next[k]);
+    if (firstKey) return focusTarget(firstKey);
+    goToStep(2, "bk-h2");
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (step === 1) return continueToTime();
+    const next = detailErrors();
     if (!slot) next.slot = date ? "Pick a time for the call." : FIELD_NAMES.slot;
     setErrors(next);
     setStatus("");
-    const firstKey = ["name", "email", "industry", "needs", "budget", "slot"].find((k) => next[k]);
-    if (firstKey) return focusField(firstKey);
+    const firstKey = [...DETAIL_KEYS, "slot"].find((k) => next[k]);
+    if (firstKey) return goToStep(firstKey === "slot" ? 2 : 1, firstKey);
 
     setBusy(true);
     const res = await postJson("/api/bookings", {
@@ -264,6 +307,8 @@ export default function BookingForm() {
       const server: Record<string, string> = {};
       for (const key of Object.keys(res.fields)) if (FIELD_NAMES[key]) server[key] = FIELD_NAMES[key];
       setErrors(server);
+      const firstDetail = DETAIL_KEYS.find((k) => server[k]);
+      if (firstDetail) goToStep(1, firstDetail);
     }
     setStatus(errorText(res.error));
     if (res.error === "slot_unavailable") {
@@ -285,10 +330,21 @@ export default function BookingForm() {
 
   return (
     <form onSubmit={submit} noValidate className="bk">
-      <section className="bk-step" aria-labelledby="bk-h1">
+      <ol className="plain bk-progress" aria-label="Booking steps">
+        <li className="is-on" aria-current={step === 1 ? "step" : undefined}>
+          <span>1</span> Your details
+        </li>
+        <li className={step === 2 ? "is-on" : undefined} aria-current={step === 2 ? "step" : undefined}>
+          <span>2</span> Pick a time
+        </li>
+      </ol>
+
+      <section className="bk-step" aria-labelledby="bk-h1" hidden={step !== 1}>
         <header className="bk-head">
           <span className="bk-eyebrow">Step 1 of 2</span>
-          <h3 id="bk-h1">About you and what you need</h3>
+          <h3 id="bk-h1" tabIndex={-1}>
+            About you and what you need
+          </h3>
         </header>
         <div className="stack">
           <div className="two">
@@ -389,13 +445,31 @@ export default function BookingForm() {
           <Field id="book-notes" label="Anything we should know before the call?" optional>
             <textarea id="book-notes" rows={3} maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
+
+          <div className="form-foot">
+            <button className="btn btn--amber" type="button" onClick={continueToTime}>
+              Continue to pick a time
+            </button>
+            <span className="consent">Next, choose a day and time that suits you.</span>
+          </div>
         </div>
       </section>
 
-      <section className="bk-step bk-step--time" aria-labelledby="bk-h2">
+      <section className="bk-step bk-step--time" aria-labelledby="bk-h2" hidden={step !== 2}>
+        <div className="bk-who">
+          <p>
+            <span>Booking for</span>
+            {name.trim()}, {email.trim()}
+          </p>
+          <button type="button" className="linkbtn" onClick={() => goToStep(1, "bk-h1")}>
+            Edit details
+          </button>
+        </div>
         <header className="bk-head">
           <span className="bk-eyebrow">Step 2 of 2</span>
-          <h3 id="bk-h2">Pick a time</h3>
+          <h3 id="bk-h2" tabIndex={-1}>
+            Pick a time
+          </h3>
           <p className="bk-hint">
             {cal?.minutes || 15} minute call. Open 24 hours a day, every day. Times are shown in the time zone you choose.
           </p>
@@ -512,7 +586,7 @@ export default function BookingForm() {
             {status}
           </p>
         ) : null}
-        <div className="form-foot">
+        <div className="form-foot" hidden={step !== 2}>
           <button className="btn btn--amber" type="submit" disabled={busy || calError}>
             {busy ? "Booking" : "Book this time"}
           </button>

@@ -95,3 +95,13 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - Google Search Console: Domain property `imperiumsolutionsinc.com` under markravencanete50@gmail.com, verified by DNS TXT `google-site-verification=...` on @ in GoDaddy (do not delete that record). Sitemap https://imperiumsolutionsinc.com/sitemap.xml submitted 2026-11-21. Indexing requested for /, /services, /contact, /testimonials.
 - Check in about a week: Pages report, sitemap "Success" with 10 URLs, and any "Google chose different canonical" (vercel.app duplicate host).
 - Open content items: privacy policy legal review, real team photos, Upwork figures kept current, more written reviews.
+
+## 2026-11-22: UX audit, quick wins, motion and modal cards (branch `claude/laughing-albattani-rh7hmq`, NOT on main)
+
+- UX audit and redesign proposal published as a private Claude artifact (ask Lee for the link). Top findings: no real people or team photos, all proof is Upwork hours, weak reviews, a home page that repeats itself, no pricing.
+- Quick wins done: removed the October 2025 farewell review from `testimonials` in `content.ts`; photo credits moved off the footer to the new `/credits` page (registered in `src/lib/seo/pages.ts`, so it is in the sitemap); footer has a Contact column; the hero rotates only industries tagged Delivered; the booking form is a real two step flow (`step` state in `BookingForm.tsx`, Continue validates step 1, Edit details goes back, focus moves to each step heading).
+- Home page: the Your hours coverage clock and the repeated About block are removed (the clock stays on /services). Home is about 7,600px on desktop, down from 9,600.
+- New `src/components/site/DetailCard.tsx`: a flat tile whose whole surface opens a native `<dialog>` modal card. Tiles never lift or cast a shadow (client rule: no floating cards); Lee approved modals on 2026-11-22.
+- New `src/components/site/graphics.tsx`: six small SVG motion graphics for the service tiles. CSS lives under "Motion graphics" at the end of `globals.css`. Loops run only after `[data-in]` and never under `html.reduce`; the still frame shows the finished state.
+- Services is now a deck of six capability tiles (front office and back office) that open modal cards. The operating model (`Model`) is an animated flow with three stage tiles that open modals. Results and Industries open modals on the home page only (`compact`).
+- Typecheck, lint and build pass. Not merged to main, so not live. Merge to main to deploy.
