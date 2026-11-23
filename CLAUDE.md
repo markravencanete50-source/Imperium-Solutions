@@ -28,6 +28,10 @@ Imperium Solutions marketing site plus admin CRM. Next.js 16 App Router, TypeScr
 
 Run `npm run typecheck`, `npm run lint`, and `npm run build`. All three pass on the delivered code.
 
+## Video and social content
+
+Before making any video, reel, or animated post for Imperium, read `VIDEO-GUIDELINES.md` and follow it. Hard rules: no tilted or perspective screens or pictures, no zoom or flash transitions, and screens must show complete, realistic information that matches what the voice says.
+
 ## Start here
 
 The site is live and set up. Read `SESSION-HANDOVER.md` first. It has the current status, any uncommitted work, the open tasks, and how to test locally. Update it at the end of every session.
