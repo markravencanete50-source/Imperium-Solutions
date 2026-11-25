@@ -15,7 +15,9 @@ These rules come from Imperium's review of the first brand videos (November 2026
 3. **Screens must look like the real thing, with complete information.** A CRM shows a real contact record (name, title, company, email, phone, owner, lead source, stage, activity with timestamps). A helpdesk shows real conversations, times, channels and statuses. Never use grey skeleton bars or placeholder blocks.
 4. **The background matches what the voice says.** Talking about live chat shows a live chat. Talking about the CRM shows the CRM. Talking about calendars shows a calendar. No generic background loops.
 5. **Real proof only.** Upwork or client proof must be the real figures from the public profile (see `src/lib/content.ts`). A screenshot of Upwork must come from the account owner. Never recreate or imitate Upwork's (or any other brand's) interface to look like a real screenshot.
-6. **Client copy rules apply on screen too.** No em dashes, no decorative symbols, no emojis. Real photos only, never AI generated images.
+6. **No empty illustrations.** Every icon, object or illustration carries real content. A message bubble shows the actual message, a card shows real fields, a chart shows labels and values, an envelope shows sender and subject, a calendar shows named events. Never an empty shape.
+7. **Motion graphics are 3D.** Videos are built as 3D scenes (three.js: studio lighting, shadows, extruded objects, camera moves through the space). Screens and photos inside a 3D scene still face the camera straight on (rule 1).
+8. **Client copy rules apply on screen too.** No em dashes, no decorative symbols, no emojis. Real photos only, never AI generated images.
 
 ## Sample data on screens
 
