@@ -32,7 +32,7 @@ These rules come from Imperium's review of the first brand videos (November 2026
 
 ## Voice and audio
 
-- An AI voiceover is approved (current voice: Kokoro `af_heart`, about 1.1x speed). It speaks as the company. It never claims to be a real person ("I'm Tom" is only for Tom's own recordings).
+- An AI voiceover is approved. **Use only Kokoro `af_heart` at 1.1x speed for every video.** Imperium reviewed the other voices (af_bella, am_michael, bm_george) on 2026-11-25 and rejected them. The voice speaks as the company. It never claims to be a real person ("I'm Tom" is only for Tom's own recordings).
 - Tick the "AI-generated content" label on TikTok, Instagram and YouTube when the voice is AI.
 - Mix: voice at -16 LUFS, music ducked under the voice, master at -14 LUFS integrated with -1.5 dBTP peaks.
 - Burn in captions for every line. The spoken word lights up as it is said.
