@@ -2,6 +2,7 @@ import { site } from "@/lib/content";
 import { absoluteUrl, anchor, ids, logoUrl, publicEmail, sameAs } from "./config";
 import { CONTENT_LAST_MODIFIED, seoPages, type SeoPath } from "./pages";
 import { seoServices } from "./services";
+import { postWordCount, posts, type Post } from "@/lib/blog/posts";
 
 // Small typed helpers for schema.org JSON-LD. Everything marked up here is visible on the page.
 
@@ -85,7 +86,7 @@ export function serviceNodes(): JsonLdNode[] {
   }));
 }
 
-export function faqNode(items: { q: string; a: string }[], path: SeoPath): JsonLdNode {
+export function faqNode(items: { q: string; a: string }[], path: string): JsonLdNode {
   return {
     "@type": "FAQPage",
     "@id": anchor(path, "faq"),
@@ -103,5 +104,92 @@ export function pageGraph(path: SeoPath): JsonLdGraph {
   const graph: JsonLdNode[] = [organizationNode(), websiteNode(), webPageNode(path)];
   if (path !== "/") graph.push(breadcrumbNode(path));
   if (path === "/services") graph.push(...serviceNodes());
+  if (path === "/blog") graph.push(blogNode());
+  return { "@context": "https://schema.org", "@graph": graph };
+}
+
+/** Path of a blog post. */
+export const postPath = (post: Post) => `/blog/${post.slug}`;
+
+/** The blog itself, listing every post. Visible on /blog. */
+export function blogNode(): JsonLdNode {
+  return {
+    "@type": "Blog",
+    "@id": anchor("/blog", "blog"),
+    url: absoluteUrl("/blog"),
+    name: `${site.name} blog`,
+    description: seoPages["/blog"].description,
+    inLanguage: "en",
+    publisher: { "@id": ids.org },
+    mainEntityOfPage: { "@id": anchor("/blog", "webpage") },
+    blogPost: posts.map((p) => ({
+      "@type": "BlogPosting",
+      "@id": anchor(postPath(p), "article"),
+      headline: p.title,
+      url: absoluteUrl(postPath(p)),
+      datePublished: p.published,
+      dateModified: p.updated,
+    })),
+  };
+}
+
+/** Graph for one post: organization, website, the web page, Home > Blog > post breadcrumbs, the article, and its FAQ. */
+export function postGraph(post: Post): JsonLdGraph {
+  const path = postPath(post);
+  const url = absoluteUrl(path);
+  const graph: JsonLdNode[] = [
+    organizationNode(),
+    websiteNode(),
+    {
+      "@type": "WebPage",
+      "@id": anchor(path, "webpage"),
+      url,
+      name: post.title,
+      description: post.description,
+      inLanguage: "en",
+      datePublished: post.published,
+      dateModified: post.updated,
+      isPartOf: { "@id": ids.website },
+      primaryImageOfPage: { "@id": anchor(path, "image") },
+      breadcrumb: { "@id": anchor(path, "breadcrumb") },
+      publisher: { "@id": ids.org },
+    },
+    {
+      "@type": "ImageObject",
+      "@id": anchor(path, "image"),
+      url: absoluteUrl(post.image.src),
+      contentUrl: absoluteUrl(post.image.src),
+      width: post.image.width,
+      height: post.image.height,
+      caption: post.image.alt,
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": anchor(path, "breadcrumb"),
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: seoPages["/"].crumb, item: absoluteUrl("/") },
+        { "@type": "ListItem", position: 2, name: seoPages["/blog"].crumb, item: absoluteUrl("/blog") },
+        { "@type": "ListItem", position: 3, name: post.title, item: url },
+      ],
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": anchor(path, "article"),
+      headline: post.title,
+      description: post.description,
+      image: { "@id": anchor(path, "image") },
+      datePublished: post.published,
+      dateModified: post.updated,
+      author: { "@id": ids.org },
+      publisher: { "@id": ids.org },
+      mainEntityOfPage: { "@id": anchor(path, "webpage") },
+      isPartOf: { "@id": anchor("/blog", "blog") },
+      articleSection: post.section,
+      keywords: post.keywords.join(", "),
+      wordCount: postWordCount(post),
+      inLanguage: "en",
+    },
+  ];
+  if (post.faq.length) graph.push({ ...faqNode(post.faq, path), isPartOf: { "@id": anchor(path, "webpage") } });
   return { "@context": "https://schema.org", "@graph": graph };
 }

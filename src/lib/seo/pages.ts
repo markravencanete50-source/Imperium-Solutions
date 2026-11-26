@@ -13,7 +13,8 @@ export type SeoPath =
   | "/contact"
   | "/careers"
   | "/privacy"
-  | "/credits";
+  | "/credits"
+  | "/blog";
 
 export type SeoPage = {
   path: SeoPath;
@@ -138,9 +139,19 @@ export const seoPages: Record<SeoPath, SeoPage> = {
     changeFrequency: "yearly",
     priority: 0.1,
   },
+  "/blog": {
+    path: "/blog",
+    title: "Blog: Customer Support and Back Office Insights",
+    crumb: "Blog",
+    description:
+      "Practical guides on outsourced customer support, virtual assistance, and back office operations for growing businesses, from the managed team at Imperium.",
+    schemaType: "CollectionPage",
+    changeFrequency: "weekly",
+    priority: 0.7,
+  },
 };
 
 export const seoPaths = Object.keys(seoPages) as SeoPath[];
 
 /** Fixed date for sitemap lastModified and schema dateModified. Update when page content changes. */
-export const CONTENT_LAST_MODIFIED = "2026-11-22";
+export const CONTENT_LAST_MODIFIED = "2026-11-26";

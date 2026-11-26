@@ -28,7 +28,7 @@ export default function Header() {
         </Link>
         <nav className="nav" id="nav" aria-label="Main">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} onClick={close} aria-current={pathname === item.href ? "page" : undefined}>
+            <Link key={item.href} href={item.href} onClick={close} aria-current={pathname === item.href || (item.href === "/blog" && pathname.startsWith("/blog/")) ? "page" : undefined}>
               {item.label}
             </Link>
           ))}

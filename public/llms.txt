@@ -28,8 +28,13 @@ Every engagement follows the same 90 day plan. Days 1 to 30, launch: define requ
 - [Industries](https://imperiumsolutionsinc.com/industries): industries delivered and supported
 - [About](https://imperiumsolutionsinc.com/about): who we are and how the teams work
 - [Contact](https://imperiumsolutionsinc.com/contact): book a 15 minute consultation or request an estimate
+- [Blog](https://imperiumsolutionsinc.com/blog): guides on outsourced customer support and back office operations
 - [Careers](https://imperiumsolutionsinc.com/careers): work from home roles in support, virtual assistance, and operations
 - [Privacy Policy](https://imperiumsolutionsinc.com/privacy): what the website collects and why
+
+## Articles
+
+- [7 Signs Your SaaS Company Needs Outsourced Customer Support](https://imperiumsolutionsinc.com/blog/signs-saas-company-needs-outsourced-customer-support): when outsourcing makes sense, when it does not, and the five things to define before choosing a partner
 
 ## Optional
 

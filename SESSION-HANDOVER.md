@@ -105,3 +105,11 @@ Resend is wired in. Needs `RESEND_API_KEY` added in Vercel (Production, Preview,
 - New `src/components/site/graphics.tsx`: six small SVG motion graphics for the service tiles. CSS lives under "Motion graphics" at the end of `globals.css`. Loops run only after `[data-in]` and never under `html.reduce`; the still frame shows the finished state.
 - Services is now a deck of six capability tiles (front office and back office) that open modal cards. The operating model (`Model`) is an animated flow with three stage tiles that open modals. Results and Industries open modals on the home page only (`compact`).
 - Typecheck, lint and build pass. Not merged to main, so not live. Merge to main to deploy.
+
+## 2026-11-26: Blog
+
+- New `/blog` index and `/blog/[slug]` article pages. Posts are structured data in `src/lib/blog/posts.ts` (paragraphs, headings, lists, bold lead lists, a closing call to action, FAQ). To add a post: add an entry at the top of `posts`, keep the description 140 to 160 characters, use a real photo from `public/images` that is credited on /credits, and bump `CONTENT_LAST_MODIFIED`.
+- First post: "7 Signs Your SaaS Company Needs Outsourced Customer Support" (from Lee's Blog_ideas.docx). Text is verbatim except: "Days 1--30" style ranges became "Days 1 to 30" (client dash rule), the closing "Visit imperiumsolutionsinc.com" line became booking buttons, and four internal links were added (/services#coverage, /services, /how-it-works, Upwork profile) plus one short "See how coverage hours work" link sentence.
+- SEO: absolute title, meta description, canonical, Open Graph type article with published and modified times, JSON-LD graph (WebPage, ImageObject, BreadcrumbList Home > Blog > post, BlogPosting authored and published by the Organization, FAQPage). /blog carries a Blog node listing every post. Posts are in the sitemap (lastModified = post.updated) and in llms.txt. Blog is in the header nav and footer.
+- With cacheComponents, `dynamicParams` is not allowed. Unknown slugs call notFound(). With Partial Prefetching the first hit on an unknown slug streams with status 200 but carries noindex and the not found page; repeat hits return 404.
+- After deploy: request indexing for /blog and the post in Search Console.
