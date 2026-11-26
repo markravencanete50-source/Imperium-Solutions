@@ -4,9 +4,9 @@ import "server-only";
 // Uses the Identity Toolkit REST endpoint (Google validates the token) instead of
 // firebase-admin/auth, whose jose dependency fails to load on the Vercel runtime.
 
-export type AdminCheck = { ok: true; email: string } | { ok: false; status: 401 | 403 | 503 };
+export type AdminCheck = { ok: true; email: string; uid: string } | { ok: false; status: 401 | 403 | 503 };
 
-type LookupUser = { email?: string; disabled?: boolean; customAttributes?: string };
+type LookupUser = { localId?: string; email?: string; disabled?: boolean; customAttributes?: string };
 
 export async function verifyAdminToken(idToken: string): Promise<AdminCheck> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -34,7 +34,7 @@ export async function verifyAdminToken(idToken: string): Promise<AdminCheck> {
       claims = {};
     }
     if (claims.admin !== true) return { ok: false, status: 403 };
-    return { ok: true, email: user.email || "" };
+    return { ok: true, email: user.email || "", uid: user.localId || "" };
   } catch {
     return { ok: false, status: 401 };
   }

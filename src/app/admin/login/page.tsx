@@ -4,10 +4,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/client";
-import { useAuth } from "@/components/admin/auth";
+import { BLOCKED_MESSAGE, useAuth } from "@/components/admin/auth";
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOutReason } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +24,11 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-    } catch {
-      setError("That email and password do not match an admin account.");
+    } catch (err) {
+      const code = (err as { code?: string } | null)?.code;
+      if (code === "auth/user-disabled") setError(BLOCKED_MESSAGE);
+      else if (code === "auth/too-many-requests") setError("Too many attempts. Wait a few minutes, then try again.");
+      else setError("That email and password do not match an admin account.");
       setBusy(false);
     }
   }
@@ -55,9 +58,9 @@ export default function LoginPage() {
             required
           />
         </label>
-        {error ? (
+        {error || signOutReason ? (
           <p className="login-err" role="alert">
-            {error}
+            {error || signOutReason}
           </p>
         ) : null}
         <button className="abtn abtn--primary" type="submit" disabled={busy || !isFirebaseConfigured}>
